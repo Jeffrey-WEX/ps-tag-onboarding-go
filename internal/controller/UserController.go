@@ -27,6 +27,7 @@ func (controller UserController) GetUserById(context *gin.Context) {
 
 	if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "User not found"})
+		return
 	}
 
 	context.IndentedJSON(http.StatusOK, user)
