@@ -40,6 +40,12 @@ func (controller UserController) AddUser(context *gin.Context) {
 		return
 	}
 
-	controller.userService.AddUser(newUser)
-	context.IndentedJSON(http.StatusCreated, newUser)
+	newUser = controller.userService.AddUser(newUser)
+
+	if len(newUser.ValidationErrors) > 0 {
+		context.IndentedJSON(http.StatusBadRequest, gin.H{"errors": &newUser.ValidationErrors})
+	} else {
+		context.IndentedJSON(http.StatusCreated, newUser)
+	}
+
 }

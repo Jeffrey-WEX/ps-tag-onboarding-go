@@ -11,17 +11,18 @@ import (
 
 func main() {
 	fmt.Println("Starting Application!")
-	var repository = repository.NewRepository()
-	var service = service.NewService(repository)
-	var controller = controller.NewController(service)
-	startHttpServer(controller)
+	var userRepository = repository.NewRepository()
+	var userValidator = service.NewUserValidationService(userRepository)
+	var userService = service.NewService(userRepository, userValidator)
+	var userController = controller.NewController(userService)
+	startHttpServer(userController)
 }
 
-func startHttpServer(controller controller.UserController) {
+func startHttpServer(userController controller.UserController) {
 	router := gin.Default()
-	router.GET("/users", controller.GetAllUsers)
-	router.GET("/users/:id", controller.GetUserById)
-	router.POST("/users", controller.AddUser)
+	router.GET("/users", userController.GetAllUsers)
+	router.GET("/users/:id", userController.GetUserById)
+	router.POST("/users", userController.AddUser)
 
 	err := router.Run(":8080")
 	if err != nil {

@@ -35,6 +35,17 @@ func (r UserRepository) GetAllUsers() []model.User {
 	return users
 }
 
-func (r UserRepository) AddUser(newUser model.User) {
+func (r UserRepository) AddUser(newUser model.User) model.User {
 	users = append(users, newUser)
+	return newUser
+}
+
+func (r UserRepository) FindUserByFirstLastName(firstName string, lastName string) model.User {
+	for i, user := range users {
+		if user.FirstName == firstName && user.LastName == lastName {
+			return users[i]
+		}
+	}
+
+	return model.User{}
 }
