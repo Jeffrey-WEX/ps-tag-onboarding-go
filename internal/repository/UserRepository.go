@@ -4,16 +4,18 @@ import (
 	"errors"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
+	"github.com/google/uuid"
 )
 
 var users = []model.User{
-	{ID: "1", FirstName: "John", LastName: "Doe", Email: "John.Doe@gmail.com", Age: 40},
-	{ID: "2", FirstName: "Matt", LastName: "White", Email: "Matt.White@gmail.com", Age: 21},
-	{ID: "3", FirstName: "Connor", LastName: "Pan", Email: "Connor.Pan@gmail.com", Age: 35},
+	{ID: uuid.New().String(), FirstName: "John", LastName: "Doe", Email: "John.Doe@gmail.com", Age: 40},
+	{ID: uuid.New().String(), FirstName: "Matt", LastName: "White", Email: "Matt.White@gmail.com", Age: 21},
+	{ID: uuid.New().String(), FirstName: "Connor", LastName: "Pan", Email: "Connor.Pan@gmail.com", Age: 35},
 }
 
 type UserRepository struct {
-	repo *UserRepository
+	// TODO: change this to interface
+	// TODO: create a new repository class for mongoDB
 }
 
 func NewRepository() UserRepository {
@@ -28,7 +30,7 @@ func (r UserRepository) GetUserById(id string) (*model.User, error) {
 		}
 	}
 
-	return nil, errors.New("User not found")
+	return nil, errors.New("user not found")
 }
 
 func (r UserRepository) GetAllUsers() []model.User {
@@ -36,6 +38,7 @@ func (r UserRepository) GetAllUsers() []model.User {
 }
 
 func (r UserRepository) AddUser(newUser model.User) model.User {
+	newUser.ID = uuid.New().String()
 	users = append(users, newUser)
 	return newUser
 }
