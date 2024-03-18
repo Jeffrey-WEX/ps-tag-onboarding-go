@@ -12,15 +12,15 @@ var users = []model.User{
 	{ID: "3", FirstName: "Connor", LastName: "Pan", Email: "Connor.Pan@gmail.com", Age: 35},
 }
 
-type Repository struct {
-	repo *Repository
+type UserRepository struct {
+	repo *UserRepository
 }
 
-func NewRepository() Repository {
-	return Repository{}
+func NewRepository() UserRepository {
+	return UserRepository{}
 }
 
-func (r Repository) GetUserById(id string) (*model.User, error) {
+func (r UserRepository) GetUserById(id string) (*model.User, error) {
 
 	for i, user := range users {
 		if user.ID == id {
@@ -31,10 +31,10 @@ func (r Repository) GetUserById(id string) (*model.User, error) {
 	return nil, errors.New("User not found")
 }
 
-func (r Repository) GetAllUsers() []model.User {
+func (r UserRepository) GetAllUsers() []model.User {
 	return users
 }
 
-func (r Repository) AddUser(newUser model.User) {
+func (r UserRepository) AddUser(newUser model.User) {
 	users = append(users, newUser)
 }
