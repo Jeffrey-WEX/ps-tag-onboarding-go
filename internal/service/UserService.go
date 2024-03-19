@@ -23,7 +23,6 @@ func (service UserService) GetUserById(userId string) (*model.User, error) {
 }
 
 func (service UserService) CreateUser(newUser model.User) model.User {
-	// TODO: Validate user
 	valid, user := service.UserValidation.ValidateUser(newUser)
 
 	if !valid {

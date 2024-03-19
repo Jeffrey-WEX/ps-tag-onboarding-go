@@ -9,21 +9,21 @@ import (
 )
 
 type UserController struct {
-	userService service.UserService
+	service service.Service
 }
 
-func NewController(userService service.UserService) UserController {
-	return UserController{userService}
+func NewController(service service.Service) UserController {
+	return UserController{service}
 }
 
 func (controller UserController) GetAllUsers(context *gin.Context) {
-	users := controller.userService.GetAllUsers()
+	users := controller.service.GetAllUsers()
 	context.IndentedJSON(http.StatusOK, users)
 }
 
 func (controller UserController) GetUserById(context *gin.Context) {
 	id := context.Param("id")
-	user, err := controller.userService.GetUserById(id)
+	user, err := controller.service.GetUserById(id)
 
 	if err != nil {
 		context.IndentedJSON(http.StatusNotFound, gin.H{"message": "User not found"})
@@ -41,7 +41,7 @@ func (controller UserController) CreateUser(context *gin.Context) {
 		return
 	}
 
-	newUser = controller.userService.CreateUser(newUser)
+	newUser = controller.service.CreateUser(newUser)
 
 	if len(newUser.ValidationErrors) > 0 {
 		context.IndentedJSON(http.StatusBadRequest, gin.H{"errors": &newUser.ValidationErrors})
