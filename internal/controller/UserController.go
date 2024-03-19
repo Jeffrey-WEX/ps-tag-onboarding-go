@@ -33,7 +33,7 @@ func (controller UserController) GetUserById(context *gin.Context) {
 	context.IndentedJSON(http.StatusOK, user)
 }
 
-func (controller UserController) AddUser(context *gin.Context) {
+func (controller UserController) CreateUser(context *gin.Context) {
 	var newUser model.User
 
 	if err := context.BindJSON(&newUser); err != nil {
@@ -41,7 +41,7 @@ func (controller UserController) AddUser(context *gin.Context) {
 		return
 	}
 
-	newUser = controller.userService.AddUser(newUser)
+	newUser = controller.userService.CreateUser(newUser)
 
 	if len(newUser.ValidationErrors) > 0 {
 		context.IndentedJSON(http.StatusBadRequest, gin.H{"errors": &newUser.ValidationErrors})

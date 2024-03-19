@@ -22,13 +22,13 @@ func (service UserService) GetUserById(userId string) (*model.User, error) {
 	return service.userRepository.GetUserById(userId)
 }
 
-func (service UserService) AddUser(newUser model.User) model.User {
+func (service UserService) CreateUser(newUser model.User) model.User {
 	// TODO: Validate user
 	valid, user := service.UserValidation.ValidateUser(newUser)
 
 	if !valid {
 		return user
 	} else {
-		return service.userRepository.AddUser(newUser)
+		return service.userRepository.CreateUser(newUser)
 	}
 }

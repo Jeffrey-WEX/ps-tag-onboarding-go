@@ -1,10 +1,10 @@
 package model
 
 type User struct {
-	ID               string   `json:"id"`
-	FirstName        string   `json:"first_name"`
-	LastName         string   `json:"last_name"`
-	Email            string   `json:"email"`
-	Age              int      `json:"age"`
-	ValidationErrors []string `json:"-"`
+	ID               string   `json:"id" bson:"_id,omitempty"`
+	FirstName        string   `json:"first_name" bson:"firstName"`
+	LastName         string   `json:"last_name" bson:"lastName"`
+	Email            string   `json:"email" bson:"email"`
+	Age              int      `json:"age" bson:"age"`
+	ValidationErrors []string `json:"-" bson:"-"`
 }
