@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
-	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/service/mocks"
+	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,7 +16,7 @@ import (
 func TestUserControllerGetAllUsers(t *testing.T) {
 	// Arrange
 	router := gin.Default()
-	userServiceMock := new(mocks.UserServiceMock)
+	userServiceMock := new(service.UserServiceMock)
 	userController := NewController(userServiceMock)
 	users := []model.User{{ID: "1"}, {ID: "2"}}
 	userServiceMock.On("GetAllUsers").Return(users, nil)
@@ -38,7 +38,7 @@ func TestUserControllerGetAllUsers(t *testing.T) {
 func TestControllerGetUserById(t *testing.T) {
 	// Arrange
 	router := gin.Default()
-	userServiceMock := new(mocks.UserServiceMock)
+	userServiceMock := new(service.UserServiceMock)
 	userController := NewController(userServiceMock)
 
 	user := model.User{
@@ -68,7 +68,7 @@ func TestControllerGetUserById(t *testing.T) {
 func TestUserControllerCreaterUser(t *testing.T) {
 	// Arrange
 	router := gin.Default()
-	userServiceMock := new(mocks.UserServiceMock)
+	userServiceMock := new(service.UserServiceMock)
 	userController := NewController(userServiceMock)
 
 	user := model.User{

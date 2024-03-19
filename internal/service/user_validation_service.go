@@ -8,10 +8,10 @@ import (
 )
 
 type UserValidationService struct {
-	userRepository repository.DbRepository
+	userRepository repository.UserRepository
 }
 
-func NewUserValidationService(userRepository repository.DbRepository) UserValidationService {
+func NewUserValidationService(userRepository repository.UserRepository) UserValidationService {
 	return UserValidationService{userRepository}
 }
 

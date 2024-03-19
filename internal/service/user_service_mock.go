@@ -1,4 +1,4 @@
-package mocks
+package service
 
 import (
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"

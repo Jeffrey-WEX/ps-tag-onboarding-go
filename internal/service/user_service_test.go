@@ -1,45 +1,138 @@
 package service
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
-	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/service/mocks"
+	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetAllUsers(t *testing.T) {
-	userServiceMock := new(mocks.UserServiceMock)
-	userServiceMock.On("GetAllUsers").Return([]model.User{{ID: "1"}, {ID: "2"}}, nil)
+func TestGetUserUsingExistingId_ReturnsUser(t *testing.T) {
+	// Arrange
+	dbRepositoryMock := new(repository.DbRepositoryMock)
+	userValidationService := NewUserValidationService(dbRepositoryMock)
+	userService := NewService(dbRepositoryMock, userValidationService)
 
-	users := userServiceMock.GetAllUsers()
+	user := model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@test.com",
+		Age:       25,
+	}
 
-	assert.Len(t, users, 2)
-	assert.Equal(t, "1", users[0].ID)
-	assert.Equal(t, "2", users[1].ID)
+	dbRepositoryMock.On("GetUserById", "1").Return(&user, nil)
 
-	userServiceMock.AssertExpectations(t)
+	// Act
+	result, _ := userService.GetUserById(user.ID)
+
+	// Assert
+	dbRepositoryMock.AssertCalled(t, "GetUserById", "1")
+	assert.Equal(t, user, *result)
 }
 
-func TestGetUserById(t *testing.T) {
-	userServiceMock := new(mocks.UserServiceMock)
-	userServiceMock.On("GetUserById", "1")
+func TestGetUserUsingNonExistingId_ReturnsError(t *testing.T) {
+	// Arrange
+	dbRepositoryMock := new(repository.DbRepositoryMock)
+	userValidationService := NewUserValidationService(dbRepositoryMock)
+	userService := NewService(dbRepositoryMock, userValidationService)
 
-	user, err := userServiceMock.GetUserById("1")
+	dbRepositoryMock.On("GetUserById", "1").Return(nil, errors.New("user not found"))
 
-	assert.NoError(t, err)
-	assert.Equal(t, "1", user.ID)
+	// Act
+	result, err := userService.GetUserById("1")
 
-	userServiceMock.AssertExpectations(t)
+	// Assert
+	dbRepositoryMock.AssertCalled(t, "GetUserById", "1")
+	assert.Nil(t, result)
+	assert.NotNil(t, err)
 }
 
-func TestCreateUser(t *testing.T) {
-	userServiceMock := new(mocks.UserServiceMock)
-	userServiceMock.On("CreateUser", model.User{ID: "1"}).Return(model.User{ID: "1"}, nil)
+func TestGetAllUsers_ReturnsUsers(t *testing.T) {
+	// Arrange
+	dbRepositoryMock := new(repository.DbRepositoryMock)
+	userValidationService := NewUserValidationService(dbRepositoryMock)
+	userService := NewService(dbRepositoryMock, userValidationService)
 
-	user := userServiceMock.CreateUser(model.User{ID: "1"})
+	user1 := model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@test.com",
+		Age:       25,
+	}
 
-	assert.Equal(t, "1", user.ID)
+	user2 := model.User{
+		ID:        "2",
+		FirstName: "Jane",
+		LastName:  "Doe",
+		Email:     "JaneDoe@test.com",
+		Age:       23,
+	}
 
-	userServiceMock.AssertExpectations(t)
+	users := []model.User{user1, user2}
+
+	dbRepositoryMock.On("GetAllUsers").Return(users)
+
+	// Act
+	result := userService.GetAllUsers()
+
+	// Assert
+	dbRepositoryMock.AssertCalled(t, "GetAllUsers")
+	assert.Equal(t, users, result)
+}
+
+func TestCreateValidUser_ReturnsUser(t *testing.T) {
+	// Arrange
+	dbRepositoryMock := new(repository.DbRepositoryMock)
+	userValidationService := NewUserValidationService(dbRepositoryMock)
+	userService := NewService(dbRepositoryMock, userValidationService)
+
+	user := model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@test.com",
+		Age:       25,
+	}
+
+	dbRepositoryMock.On("CreateUser", user).Return(user)
+	dbRepositoryMock.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(model.User{})
+
+	// Act
+	result := userService.CreateUser(user)
+
+	// Assert
+	dbRepositoryMock.AssertCalled(t, "FindUserByFirstLastName", user.FirstName, user.LastName)
+	dbRepositoryMock.AssertCalled(t, "CreateUser", user)
+	assert.Equal(t, user, result)
+	assert.Empty(t, user.ValidationErrors)
+}
+
+func TestCreateInvalidUser_ReturnsError(t *testing.T) {
+	// Arrange
+	dbRepositoryMock := new(repository.DbRepositoryMock)
+	userValidationService := NewUserValidationService(dbRepositoryMock)
+	userService := NewService(dbRepositoryMock, userValidationService)
+
+	user := model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@test.com",
+		Age:       24,
+	}
+
+	dbRepositoryMock.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(user)
+
+	// Act
+	result := userService.CreateUser(user)
+
+	// Assert
+	dbRepositoryMock.AssertNotCalled(t, "CreateUser", user)
+	dbRepositoryMock.AssertCalled(t, "FindUserByFirstLastName", user.FirstName, user.LastName)
+	assert.NotEmpty(t, result.ValidationErrors)
+	assert.Equal(t, "User with the same first and last name already exists", result.ValidationErrors[0])
 }
