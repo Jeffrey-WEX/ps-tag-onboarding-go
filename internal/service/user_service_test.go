@@ -6,15 +6,29 @@ import (
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestGetUserUsingExistingId_ReturnsUser(t *testing.T) {
-	// Arrange
-	dbRepositoryMock := new(repository.DbRepositoryMock)
-	userValidationService := NewUserValidationService(dbRepositoryMock)
-	userService := NewService(dbRepositoryMock, userValidationService)
+type UserServiceTestSuite struct {
+	suite.Suite
+	dbRepo                *repository.DbRepositoryMock
+	userValidationService UserValidationService
+	userService           UserService
+}
 
+func TestUserService(t *testing.T) {
+	suite.Run(t, new(UserServiceTestSuite))
+}
+
+func (suite *UserServiceTestSuite) SetupTest() {
+	suite.dbRepo = &repository.DbRepositoryMock{}
+	suite.userValidationService = NewUserValidationService(suite.dbRepo)
+	suite.userService = NewService(suite.dbRepo, suite.userValidationService)
+
+}
+
+func (suite *UserServiceTestSuite) TestGetUserUsingExistingId_ReturnsUser() {
+	// Arrange
 	user := model.User{
 		ID:        "1",
 		FirstName: "John",
@@ -23,39 +37,31 @@ func TestGetUserUsingExistingId_ReturnsUser(t *testing.T) {
 		Age:       25,
 	}
 
-	dbRepositoryMock.On("GetUserById", "1").Return(&user, nil)
+	suite.dbRepo.On("GetUserById", "1").Return(&user, nil)
 
 	// Act
-	result, _ := userService.GetUserById(user.ID)
+	result, _ := suite.userService.GetUserById(user.ID)
 
 	// Assert
-	dbRepositoryMock.AssertCalled(t, "GetUserById", "1")
-	assert.Equal(t, user, *result)
+	suite.dbRepo.AssertCalled(suite.T(), "GetUserById", user.ID)
+	suite.Assert().Equal(user, *result)
 }
 
-func TestGetUserUsingNonExistingId_ReturnsError(t *testing.T) {
+func (suite *UserServiceTestSuite) TestGetUserUsingNonExistingId_ReturnsError() {
 	// Arrange
-	dbRepositoryMock := new(repository.DbRepositoryMock)
-	userValidationService := NewUserValidationService(dbRepositoryMock)
-	userService := NewService(dbRepositoryMock, userValidationService)
-
-	dbRepositoryMock.On("GetUserById", "1").Return(nil, errors.New("user not found"))
+	suite.dbRepo.On("GetUserById", "1").Return(nil, errors.New("user not found"))
 
 	// Act
-	result, err := userService.GetUserById("1")
+	result, err := suite.userService.GetUserById("1")
 
 	// Assert
-	dbRepositoryMock.AssertCalled(t, "GetUserById", "1")
-	assert.Nil(t, result)
-	assert.NotNil(t, err)
+	suite.dbRepo.AssertCalled(suite.T(), "GetUserById", "1")
+	suite.Assert().Nil(result)
+	suite.Assert().NotNil(err)
 }
 
-func TestGetAllUsers_ReturnsUsers(t *testing.T) {
+func (suite *UserServiceTestSuite) TestGetAllUsers_ReturnsUsers() {
 	// Arrange
-	dbRepositoryMock := new(repository.DbRepositoryMock)
-	userValidationService := NewUserValidationService(dbRepositoryMock)
-	userService := NewService(dbRepositoryMock, userValidationService)
-
 	user1 := model.User{
 		ID:        "1",
 		FirstName: "John",
@@ -74,22 +80,18 @@ func TestGetAllUsers_ReturnsUsers(t *testing.T) {
 
 	users := []model.User{user1, user2}
 
-	dbRepositoryMock.On("GetAllUsers").Return(users)
+	suite.dbRepo.On("GetAllUsers").Return(users)
 
 	// Act
-	result := userService.GetAllUsers()
+	result := suite.userService.GetAllUsers()
 
 	// Assert
-	dbRepositoryMock.AssertCalled(t, "GetAllUsers")
-	assert.Equal(t, users, result)
+	suite.dbRepo.AssertCalled(suite.T(), "GetAllUsers")
+	suite.Assert().Equal(users, result)
 }
 
-func TestCreateValidUser_ReturnsUser(t *testing.T) {
+func (suite *UserServiceTestSuite) TestCreateValidUser_ReturnsUser() {
 	// Arrange
-	dbRepositoryMock := new(repository.DbRepositoryMock)
-	userValidationService := NewUserValidationService(dbRepositoryMock)
-	userService := NewService(dbRepositoryMock, userValidationService)
-
 	user := model.User{
 		ID:        "1",
 		FirstName: "John",
@@ -98,25 +100,21 @@ func TestCreateValidUser_ReturnsUser(t *testing.T) {
 		Age:       25,
 	}
 
-	dbRepositoryMock.On("CreateUser", user).Return(user)
-	dbRepositoryMock.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(model.User{})
+	suite.dbRepo.On("CreateUser", user).Return(user)
+	suite.dbRepo.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(model.User{})
 
 	// Act
-	result := userService.CreateUser(user)
+	result := suite.userService.CreateUser(user)
 
 	// Assert
-	dbRepositoryMock.AssertCalled(t, "FindUserByFirstLastName", user.FirstName, user.LastName)
-	dbRepositoryMock.AssertCalled(t, "CreateUser", user)
-	assert.Equal(t, user, result)
-	assert.Empty(t, user.ValidationErrors)
+	suite.dbRepo.AssertCalled(suite.T(), "FindUserByFirstLastName", user.FirstName, user.LastName)
+	suite.dbRepo.AssertCalled(suite.T(), "CreateUser", user)
+	suite.Assert().Equal(user, result)
+	suite.Assert().Empty(user.ValidationErrors)
 }
 
-func TestCreateInvalidUser_ReturnsError(t *testing.T) {
+func (suite *UserServiceTestSuite) TestCreateInvalidUser_ReturnsError() {
 	// Arrange
-	dbRepositoryMock := new(repository.DbRepositoryMock)
-	userValidationService := NewUserValidationService(dbRepositoryMock)
-	userService := NewService(dbRepositoryMock, userValidationService)
-
 	user := model.User{
 		ID:        "1",
 		FirstName: "John",
@@ -125,14 +123,14 @@ func TestCreateInvalidUser_ReturnsError(t *testing.T) {
 		Age:       24,
 	}
 
-	dbRepositoryMock.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(user)
+	suite.dbRepo.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(user)
 
 	// Act
-	result := userService.CreateUser(user)
+	result := suite.userService.CreateUser(user)
 
 	// Assert
-	dbRepositoryMock.AssertNotCalled(t, "CreateUser", user)
-	dbRepositoryMock.AssertCalled(t, "FindUserByFirstLastName", user.FirstName, user.LastName)
-	assert.NotEmpty(t, result.ValidationErrors)
-	assert.Equal(t, "User with the same first and last name already exists", result.ValidationErrors[0])
+	suite.dbRepo.AssertNotCalled(suite.T(), "CreateUser", user)
+	suite.dbRepo.AssertCalled(suite.T(), "FindUserByFirstLastName", user.FirstName, user.LastName)
+	suite.Assert().NotEmpty(result.ValidationErrors)
+	suite.Assert().Equal("User with the same first and last name already exists", result.ValidationErrors[0])
 }

@@ -5,14 +5,26 @@ import (
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestValidateUserWithNoValidationErrors(t *testing.T) {
-	// Arrange
-	dbRepositoryMock := new(repository.DbRepositoryMock)
-	userValidationService := NewUserValidationService(dbRepositoryMock)
+type UserValidationServiceTestSuite struct {
+	suite.Suite
+	dbRepo                *repository.DbRepositoryMock
+	userValidationService UserValidationService
+}
 
+func TestUserValidationService(t *testing.T) {
+	suite.Run(t, new(UserValidationServiceTestSuite))
+}
+
+func (suite *UserValidationServiceTestSuite) SetupTest() {
+	suite.dbRepo = &repository.DbRepositoryMock{}
+	suite.userValidationService = NewUserValidationService(suite.dbRepo)
+}
+
+func (suite *UserValidationServiceTestSuite) TestValidateUserWithNoValidationErrors() {
+	// Arrange
 	user := model.User{
 		ID:        "1",
 		FirstName: "John",
@@ -21,17 +33,17 @@ func TestValidateUserWithNoValidationErrors(t *testing.T) {
 		Age:       25,
 	}
 
-	dbRepositoryMock.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(model.User{})
+	suite.dbRepo.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(model.User{})
 
 	// Act
-	valid, user := userValidationService.ValidateUser(user)
+	valid, user := suite.userValidationService.ValidateUser(user)
 
 	// Assert
-	assert.True(t, valid)
-	assert.Nil(t, user.ValidationErrors)
+	suite.Assert().True(valid)
+	suite.Assert().Nil(user.ValidationErrors)
 }
 
-func TestVlidateUserWithAtLeastOneValidationError(t *testing.T) {
+func (suite *UserValidationServiceTestSuite) TestVlidateUserWithAtLeastOneValidationError() {
 	// Arrange
 	dbRepositoryMock := new(repository.DbRepositoryMock)
 	userValidationService := NewUserValidationService(dbRepositoryMock)
@@ -50,15 +62,15 @@ func TestVlidateUserWithAtLeastOneValidationError(t *testing.T) {
 	valid, user := userValidationService.ValidateUser(user)
 
 	// Assert
-	assert.False(t, valid)
-	assert.NotNil(t, user.ValidationErrors)
-	assert.Equal(t, 3, len(user.ValidationErrors))
-	assert.Contains(t, user.ValidationErrors, "User with the same first and last name already exists")
-	assert.Contains(t, user.ValidationErrors, "User email must be properly formatted")
-	assert.Contains(t, user.ValidationErrors, "User does not meet minimum age requirement")
+	suite.Assert().False(valid)
+	suite.Assert().NotNil(user.ValidationErrors)
+	suite.Assert().Equal(3, len(user.ValidationErrors))
+	suite.Assert().Contains(user.ValidationErrors, "User with the same first and last name already exists")
+	suite.Assert().Contains(user.ValidationErrors, "User email must be properly formatted")
+	suite.Assert().Contains(user.ValidationErrors, "User does not meet minimum age requirement")
 }
 
-func TestValidateAgeWithValidAge(t *testing.T) {
+func (suite *UserValidationServiceTestSuite) TestValidateAgeWithValidAge() {
 	// Arrange
 	user := model.User{
 		Age: 25,
@@ -68,10 +80,10 @@ func TestValidateAgeWithValidAge(t *testing.T) {
 	validateAge(&user)
 
 	// Arrange
-	assert.Empty(t, user.ValidationErrors)
+	suite.Assert().Empty(user.ValidationErrors)
 }
 
-func TestValidateAgeWithAgeBelowMinimum(t *testing.T) {
+func (suite *UserValidationServiceTestSuite) TestValidateAgeWithAgeBelowMinimum() {
 	// Arrange
 	user := model.User{
 		Age: 17,
@@ -81,12 +93,12 @@ func TestValidateAgeWithAgeBelowMinimum(t *testing.T) {
 	validateAge(&user)
 
 	// Arrange
-	assert.NotEmpty(t, user.ValidationErrors)
-	assert.Equal(t, 1, len(user.ValidationErrors))
-	assert.Equal(t, "User does not meet minimum age requirement", user.ValidationErrors[0])
+	suite.Assert().NotEmpty(user.ValidationErrors)
+	suite.Assert().Equal(1, len(user.ValidationErrors))
+	suite.Assert().Equal("User does not meet minimum age requirement", user.ValidationErrors[0])
 }
 
-func TestValidateEmailWithValidEmail(t *testing.T) {
+func (suite *UserValidationServiceTestSuite) TestValidateEmailWithValidEmail() {
 	// Arrange
 	user := model.User{
 		Email: "John.Doe@gmail.com",
@@ -96,10 +108,10 @@ func TestValidateEmailWithValidEmail(t *testing.T) {
 	validateEmail(&user)
 
 	// Arrange
-	assert.Empty(t, user.ValidationErrors)
+	suite.Assert().Empty(user.ValidationErrors)
 }
 
-func TestValidateEmailWithMissingEmail(t *testing.T) {
+func (suite *UserValidationServiceTestSuite) TestValidateEmailWithMissingEmail() {
 	// Arrange
 	user := model.User{}
 
@@ -107,12 +119,12 @@ func TestValidateEmailWithMissingEmail(t *testing.T) {
 	validateEmail(&user)
 
 	// Arrange
-	assert.NotEmpty(t, user.ValidationErrors)
-	assert.Equal(t, 1, len(user.ValidationErrors))
-	assert.Equal(t, "User email required", user.ValidationErrors[0])
+	suite.Assert().NotEmpty(user.ValidationErrors)
+	suite.Assert().Equal(1, len(user.ValidationErrors))
+	suite.Assert().Equal("User email required", user.ValidationErrors[0])
 }
 
-func TestValidateEmailWithInvalidEmailFormat(t *testing.T) {
+func (suite *UserValidationServiceTestSuite) TestValidateEmailWithInvalidEmailFormat() {
 	// Arrange
 	user := model.User{
 		Email: "JohnDoe.com",
@@ -122,12 +134,12 @@ func TestValidateEmailWithInvalidEmailFormat(t *testing.T) {
 	validateEmail(&user)
 
 	// Arrange
-	assert.NotEmpty(t, user.ValidationErrors)
-	assert.Equal(t, 1, len(user.ValidationErrors))
-	assert.Equal(t, "User email must be properly formatted", user.ValidationErrors[0])
+	suite.Assert().NotEmpty(user.ValidationErrors)
+	suite.Assert().Equal(1, len(user.ValidationErrors))
+	suite.Assert().Equal("User email must be properly formatted", user.ValidationErrors[0])
 }
 
-func TestValidateNameWithValidName(t *testing.T) {
+func (suite *UserValidationServiceTestSuite) TestValidateNameWithValidName() {
 	// Arrange
 	dbRepositoryMock := new(repository.DbRepositoryMock)
 	userValidationService := NewUserValidationService(dbRepositoryMock)
@@ -142,10 +154,10 @@ func TestValidateNameWithValidName(t *testing.T) {
 	validateName(&user, userValidationService)
 
 	// Arrange
-	assert.Empty(t, user.ValidationErrors)
+	suite.Assert().Empty(user.ValidationErrors)
 }
 
-func TestValidateNameWithNameMissing(t *testing.T) {
+func (suite *UserValidationServiceTestSuite) TestValidateNameWithNameMissing() {
 	// Arrange
 	dbRepositoryMock := new(repository.DbRepositoryMock)
 	userValidationService := NewUserValidationService(dbRepositoryMock)
@@ -155,12 +167,12 @@ func TestValidateNameWithNameMissing(t *testing.T) {
 	validateName(&user, userValidationService)
 
 	// Arrange
-	assert.NotEmpty(t, user.ValidationErrors)
-	assert.Equal(t, 1, len(user.ValidationErrors))
-	assert.Equal(t, "User first/last names required", user.ValidationErrors[0])
+	suite.Assert().NotEmpty(user.ValidationErrors)
+	suite.Assert().Equal(1, len(user.ValidationErrors))
+	suite.Assert().Equal("User first/last names required", user.ValidationErrors[0])
 }
 
-func TestValidateNameWithNameExistInDatabase(t *testing.T) {
+func (suite *UserValidationServiceTestSuite) TestValidateNameWithNameExistInDatabase() {
 	// Arrange
 	dbRepositoryMock := new(repository.DbRepositoryMock)
 	userValidationService := NewUserValidationService(dbRepositoryMock)
@@ -176,7 +188,7 @@ func TestValidateNameWithNameExistInDatabase(t *testing.T) {
 	validateName(&user, userValidationService)
 
 	// Arrange
-	assert.NotEmpty(t, user.ValidationErrors)
-	assert.Equal(t, 1, len(user.ValidationErrors))
-	assert.Equal(t, "User with the same first and last name already exists", user.ValidationErrors[0])
+	suite.Assert().NotEmpty(user.ValidationErrors)
+	suite.Assert().Equal(1, len(user.ValidationErrors))
+	suite.Assert().Equal("User with the same first and last name already exists", user.ValidationErrors[0])
 }
