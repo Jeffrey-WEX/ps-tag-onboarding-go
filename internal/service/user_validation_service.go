@@ -38,10 +38,6 @@ func validateEmail(user *model.User) {
 	if user.Email == "" {
 		user.ValidationErrors = append(user.ValidationErrors, "User email required")
 
-		/* Original approach converting code from java application
-		} else if !(strings.Contains(user.Email, "@")) {
-			user.ValidationErrors = append(user.ValidationErrors, "User email must be properly formatted")
-		}  */
 	} else {
 		_, err := mail.ParseAddress(user.Email)
 
@@ -54,11 +50,11 @@ func validateEmail(user *model.User) {
 func validateName(user *model.User, service UserValidationService) {
 	if user.FirstName == "" || user.LastName == "" {
 		user.ValidationErrors = append(user.ValidationErrors, "User first/last names required")
-	}
+	} else {
+		var existingUser = service.userRepository.FindUserByFirstLastName(user.FirstName, user.LastName)
 
-	var existingUser = service.userRepository.FindUserByFirstLastName(user.FirstName, user.LastName)
-
-	if existingUser.ID != "" {
-		user.ValidationErrors = append(user.ValidationErrors, "User with the same first and last name already exists")
+		if existingUser.ID != "" {
+			user.ValidationErrors = append(user.ValidationErrors, "User with the same first and last name already exists")
+		}
 	}
 }
