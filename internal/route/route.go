@@ -6,15 +6,15 @@ import (
 )
 
 type Routes struct {
-	UserController controller.UserController
+	controller controller.IController
 }
 
-func NewRouter(userController controller.UserController) Routes {
-	return Routes{UserController: userController}
+func NewRouter(controller controller.IController) Routes {
+	return Routes{controller}
 }
 
 func (r *Routes) InitializeRouter(router *gin.Engine) {
-	router.GET("/users", r.UserController.GetAllUsers)
-	router.GET("/users/:id", r.UserController.GetUserById)
-	router.POST("/users", r.UserController.CreateUser)
+	router.GET("/users", r.controller.GetAllUsers)
+	router.GET("/users/:id", r.controller.GetUserById)
+	router.POST("/users", r.controller.CreateUser)
 }
