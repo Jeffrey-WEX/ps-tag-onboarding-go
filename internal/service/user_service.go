@@ -6,11 +6,11 @@ import (
 )
 
 type UserService struct {
-	userRepository repository.UserRepository
+	userRepository repository.IUserRepository
 	UserValidation UserValidationService
 }
 
-func NewService(userRepository repository.UserRepository, userValidation UserValidationService) UserService {
+func NewService(userRepository repository.IUserRepository, userValidation UserValidationService) UserService {
 	return UserService{userRepository, userValidation}
 }
 
