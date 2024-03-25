@@ -10,29 +10,15 @@ import (
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/service"
 	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
 )
 
-type UserControllerTestSuite struct {
-	suite.Suite
-	router         *gin.Engine
-	userService    *service.UserServiceMock
-	userController UserController
-}
-
-func TestUserController(t *testing.T) {
-	suite.Run(t, new(UserControllerTestSuite))
-}
-
-func (suite *UserControllerTestSuite) SetupTest() {
-	suite.router = gin.Default()
-	suite.userService = new(service.UserServiceMock)
-	suite.userController = NewController(suite.userService)
-
-}
-
-func (suite *UserControllerTestSuite) TestControllerGetUserById() {
+func TestControllerGetUserById(t *testing.T) {
 	// Arrange
+	router := gin.Default()
+	userService := new(service.UserServiceMock)
+	userController := NewController(userService)
+
 	user := model.User{
 		ID:        "1",
 		FirstName: "John",
@@ -41,24 +27,28 @@ func (suite *UserControllerTestSuite) TestControllerGetUserById() {
 		Age:       25,
 	}
 
-	suite.userService.On("GetUserById", "1").Return(&user, nil)
+	userService.On("GetUserById", "1").Return(&user, nil)
 
 	// Act
-	suite.router.GET("/users/:id", suite.userController.GetUserById)
+	router.GET("/users/:id", userController.GetUserById)
 	req, _ := http.NewRequest("GET", "/users/1", nil)
 	w := httptest.NewRecorder()
-	suite.router.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	var bodyResponse model.User
 	json.Unmarshal(w.Body.Bytes(), &bodyResponse)
 
 	// Assert
-	suite.userService.AssertCalled(suite.T(), "GetUserById", "1")
-	suite.Assert().Equal(http.StatusOK, w.Code)
-	suite.Assert().Equal(user, bodyResponse)
+	userService.AssertCalled(t, "GetUserById", "1")
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, user, bodyResponse)
 }
 
-func (suite *UserControllerTestSuite) TestUserControllerCreaterUser() {
+func TestUserControllerCreaterUser(t *testing.T) {
 	// Arrange
+	router := gin.Default()
+	userService := new(service.UserServiceMock)
+	userController := NewController(userService)
+
 	user := model.User{
 		ID:        "1",
 		FirstName: "John",
@@ -67,19 +57,19 @@ func (suite *UserControllerTestSuite) TestUserControllerCreaterUser() {
 		Age:       25,
 	}
 
-	suite.userService.On("CreateUser", user).Return(user)
+	userService.On("CreateUser", user).Return(user)
 
 	// Act
-	suite.router.POST("/users", suite.userController.CreateUser)
+	router.POST("/users", userController.CreateUser)
 	jsonValue, _ := json.Marshal(user)
 	req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
 	w := httptest.NewRecorder()
-	suite.router.ServeHTTP(w, req)
+	router.ServeHTTP(w, req)
 	var bodyResponse model.User
 	json.Unmarshal(w.Body.Bytes(), &bodyResponse)
 
 	// Assert
-	suite.userService.AssertCalled(suite.T(), "CreateUser", user)
-	suite.Assert().Equal(http.StatusCreated, w.Code)
-	suite.Assert().Equal(user, bodyResponse)
+	userService.AssertCalled(t, "CreateUser", user)
+	assert.Equal(t, http.StatusCreated, w.Code)
+	assert.Equal(t, user, bodyResponse)
 }

@@ -17,7 +17,7 @@ func main() {
 	var userValidator = service.NewUserValidationService(userRepository)
 	var userService = service.NewService(userRepository, userValidator)
 	var userController = controller.NewController(userService)
-	var routes = route.NewRouter(userController)
+	var routes = route.NewRoutes(userController)
 	startHttpServer(routes)
 }
 

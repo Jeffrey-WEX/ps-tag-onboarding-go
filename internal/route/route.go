@@ -5,11 +5,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type IRoutes interface {
+	InitializeRouter(router *gin.Engine)
+}
+
 type Routes struct {
 	controller controller.IController
 }
 
-func NewRouter(controller controller.IController) Routes {
+func NewRoutes(controller controller.IController) Routes {
 	return Routes{controller}
 }
 
