@@ -14,7 +14,6 @@ func NewRouter(controller controller.IController) Routes {
 }
 
 func (r *Routes) InitializeRouter(router *gin.Engine) {
-	router.GET("/users", r.controller.GetAllUsers)
 	router.GET("/users/:id", r.controller.GetUserById)
 	router.POST("/users", r.controller.CreateUser)
 }

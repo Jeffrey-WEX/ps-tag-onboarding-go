@@ -31,25 +31,6 @@ func (suite *UserControllerTestSuite) SetupTest() {
 
 }
 
-func (suite *UserControllerTestSuite) TestUserControllerGetAllUsers() {
-	// Arrange
-	users := []model.User{{ID: "1"}, {ID: "2"}}
-	suite.userService.On("GetAllUsers").Return(users, nil)
-
-	// Act
-	suite.router.GET("/users", suite.userController.GetAllUsers)
-	req, _ := http.NewRequest("GET", "/users", nil)
-	w := httptest.NewRecorder()
-	suite.router.ServeHTTP(w, req)
-	var bodyResponse []model.User
-	json.Unmarshal(w.Body.Bytes(), &bodyResponse)
-
-	// Assert
-	suite.userService.AssertCalled(suite.T(), "GetAllUsers")
-	suite.Assert().Equal(http.StatusOK, w.Code)
-	suite.Assert().Equal(users, bodyResponse)
-}
-
 func (suite *UserControllerTestSuite) TestControllerGetUserById() {
 	// Arrange
 	user := model.User{

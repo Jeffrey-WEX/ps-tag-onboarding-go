@@ -14,10 +14,6 @@ func NewService(userRepository repository.IUserRepository, userValidation UserVa
 	return UserService{userRepository, userValidation}
 }
 
-func (service UserService) GetAllUsers() []model.User {
-	return service.userRepository.GetAllUsers()
-}
-
 func (service UserService) GetUserById(userId string) (*model.User, error) {
 	return service.userRepository.GetUserById(userId)
 }

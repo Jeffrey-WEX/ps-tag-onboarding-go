@@ -9,12 +9,6 @@ type UserServiceMock struct {
 	mock.Mock
 }
 
-func (m *UserServiceMock) GetAllUsers() []model.User {
-	result := m.Called()
-
-	return result.Get(0).([]model.User)
-}
-
 func (m *UserServiceMock) GetUserById(userId string) (*model.User, error) {
 	result := m.Called(userId)
 

@@ -60,36 +60,6 @@ func (suite *UserServiceTestSuite) TestGetUserUsingNonExistingId_ReturnsError() 
 	suite.Assert().NotNil(err)
 }
 
-func (suite *UserServiceTestSuite) TestGetAllUsers_ReturnsUsers() {
-	// Arrange
-	user1 := model.User{
-		ID:        "1",
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "JohnDoe@test.com",
-		Age:       25,
-	}
-
-	user2 := model.User{
-		ID:        "2",
-		FirstName: "Jane",
-		LastName:  "Doe",
-		Email:     "JaneDoe@test.com",
-		Age:       23,
-	}
-
-	users := []model.User{user1, user2}
-
-	suite.dbRepo.On("GetAllUsers").Return(users)
-
-	// Act
-	result := suite.userService.GetAllUsers()
-
-	// Assert
-	suite.dbRepo.AssertCalled(suite.T(), "GetAllUsers")
-	suite.Assert().Equal(users, result)
-}
-
 func (suite *UserServiceTestSuite) TestCreateValidUser_ReturnsUser() {
 	// Arrange
 	user := model.User{

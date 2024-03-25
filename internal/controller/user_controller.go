@@ -16,11 +16,6 @@ func NewController(service service.IService) UserController {
 	return UserController{service}
 }
 
-func (controller UserController) GetAllUsers(context *gin.Context) {
-	users := controller.service.GetAllUsers()
-	context.IndentedJSON(http.StatusOK, users)
-}
-
 func (controller UserController) GetUserById(context *gin.Context) {
 	id := context.Param("id")
 	user, err := controller.service.GetUserById(id)

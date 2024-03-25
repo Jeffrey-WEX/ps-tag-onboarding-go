@@ -9,12 +9,6 @@ type DbRepositoryMock struct {
 	mock.Mock
 }
 
-func (m *DbRepositoryMock) GetAllUsers() []model.User {
-	result := m.Called()
-
-	return result.Get(0).([]model.User)
-}
-
 func (m *DbRepositoryMock) GetUserById(userId string) (*model.User, error) {
 	result := m.Called(userId)
 

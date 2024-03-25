@@ -37,17 +37,6 @@ func (repo DbRepository) GetUserById(id string) (*model.User, error) {
 	return &user, nil
 }
 
-func (repo DbRepository) GetAllUsers() []model.User {
-	// return users
-	cursor, err := repo.db.Collection("user").Find(context.Background(), bson.D{{}})
-
-	if err != nil {
-		fmt.Println("Error getting users: ", err)
-	}
-
-	return retrieveUsersFromCursor(cursor)
-}
-
 func (repo DbRepository) CreateUser(newUser model.User) model.User {
 	newUser.ID = uuid.New().String()
 	_, err := repo.db.Collection("user").InsertOne(context.TODO(), newUser)
