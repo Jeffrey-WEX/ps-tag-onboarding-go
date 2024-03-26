@@ -10,6 +10,9 @@ services:
     environment:
       - ENVIRONMENT=docker-compose_local_container
       - DATABASE_URI=mongodb://mongo_database:27017/
+      - DATABASE_NAME=user
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=password
   
   mongo_database:
     image: mongo

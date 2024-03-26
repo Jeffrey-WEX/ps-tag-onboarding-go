@@ -8,12 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const (
-	databaseName     = "user"
-	databaseUsername = "root"
-	databasePassword = "password"
-)
-
 type Database struct {
 }
 
