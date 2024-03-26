@@ -22,7 +22,7 @@ func (controller UserController) GetUserById(context *gin.Context) {
 	user, errorMessage := controller.service.GetUserById(id)
 
 	if errorMessage != nil {
-		context.IndentedJSON(errorMessage.StatusCode(), gin.H{"message": errorMessage.Message()})
+		context.IndentedJSON(errorMessage.ErrorStatusCode, gin.H{"status_code": errorMessage.ErrorStatusCode, "message": errorMessage.ErrorMessage})
 		return
 	}
 
@@ -34,14 +34,14 @@ func (controller UserController) CreateUser(context *gin.Context) {
 
 	if err := context.BindJSON(&user); err != nil {
 
-		context.IndentedJSON(http.StatusBadRequest, gin.H{"message": constant.ErrorInvalidUserObject})
+		context.IndentedJSON(http.StatusBadRequest, gin.H{"status_code": http.StatusBadRequest, "message": constant.ErrorInvalidUserObject})
 		return
 	}
 
 	newUser, errorMessage := controller.service.CreateUser(&user)
 
 	if errorMessage != nil {
-		context.IndentedJSON(errorMessage.StatusCode(), gin.H{"errors": errorMessage.Message()})
+		context.IndentedJSON(errorMessage.ErrorStatusCode, gin.H{"status_code": errorMessage.ErrorStatusCode, "message": errorMessage.ErrorMessage})
 	} else {
 		context.IndentedJSON(http.StatusCreated, newUser)
 	}
