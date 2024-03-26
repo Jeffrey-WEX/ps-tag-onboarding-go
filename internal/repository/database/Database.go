@@ -20,5 +20,6 @@ func NewDatabase() *mongo.Database {
 		panic(err)
 	}
 
+	databaseName := os.Getenv("DATABASE_NAME")
 	return client.Database(databaseName)
 }

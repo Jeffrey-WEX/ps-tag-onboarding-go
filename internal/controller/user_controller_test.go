@@ -61,12 +61,18 @@ func TestUserControllerCreaterUser(t *testing.T) {
 
 	// Act
 	router.POST("/users", userController.CreateUser)
-	jsonValue, _ := json.Marshal(user)
+	jsonValue, err := json.Marshal(user)
+	if err != nil {
+		t.Fatalf("Error marshaling JSON: %v", err)
+	}
 	req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	var bodyResponse model.User
-	json.Unmarshal(w.Body.Bytes(), &bodyResponse)
+	err = json.Unmarshal(w.Body.Bytes(), &bodyResponse)
+	if err != nil {
+		t.Fatalf("Error unmarshaling JSON: %v", err)
+	}
 
 	// Assert
 	userService.AssertCalled(t, "CreateUser", user)
