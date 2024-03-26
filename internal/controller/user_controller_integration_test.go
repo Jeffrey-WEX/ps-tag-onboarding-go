@@ -20,6 +20,7 @@ import (
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/route"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -35,8 +36,10 @@ func cleanUpDb(db *mongo.Database) {
 }
 
 func setUpAppAndDb() (*gin.Engine, *mongo.Database, repository.IUserRepository) {
-	os.Setenv("DATABASE_URI", "mongodb://localhost:27017")
-	os.Setenv("DATABASE_NAME", "user")
+	err := godotenv.Load("../../variables.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
 	var db = database.NewDatabase()
 	var userRepository = repository.NewRepository(db)
