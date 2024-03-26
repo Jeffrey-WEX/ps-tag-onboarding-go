@@ -34,7 +34,7 @@ func cleanUpDb(db *mongo.Database) {
 	}
 }
 
-func setUpAppAndDb() (*gin.Engine, *mongo.Database, controller.UserController, repository.IUserRepository) {
+func setUpAppAndDb() (*gin.Engine, *mongo.Database, repository.IUserRepository) {
 	os.Setenv("DATABASE_URI", "mongodb://localhost:27017")
 	os.Setenv("DATABASE_NAME", "user")
 
@@ -47,13 +47,13 @@ func setUpAppAndDb() (*gin.Engine, *mongo.Database, controller.UserController, r
 	router := gin.Default()
 	routes.InitializeRouter(router)
 
-	return router, db, userController, userRepository
+	return router, db, userRepository
 }
 
 func TestUserControllerIntegration(t *testing.T) {
 
 	t.Run("Return not found when finding a non-existing user", func(t *testing.T) {
-		router, db, _, _ := setUpAppAndDb()
+		router, db, _ := setUpAppAndDb()
 
 		req, _ := http.NewRequest("GET", "/users/1", nil)
 		w := httptest.NewRecorder()
@@ -75,7 +75,7 @@ func TestUserControllerIntegration(t *testing.T) {
 	})
 
 	t.Run("Return user when finding an existing user", func(t *testing.T) {
-		router, db, _, userRepository := setUpAppAndDb()
+		router, db, userRepository := setUpAppAndDb()
 		user := model.User{
 			FirstName: "John",
 			LastName:  "Doe",
@@ -107,7 +107,7 @@ func TestUserControllerIntegration(t *testing.T) {
 	})
 
 	t.Run("Creating a valid user", func(t *testing.T) {
-		router, db, _, _ := setUpAppAndDb()
+		router, db, _ := setUpAppAndDb()
 		user := model.User{
 			FirstName: "John",
 			LastName:  "Doe",
@@ -139,7 +139,7 @@ func TestUserControllerIntegration(t *testing.T) {
 	})
 
 	t.Run("Creating an invalid user", func(t *testing.T) {
-		router, db, _, _ := setUpAppAndDb()
+		router, db, _ := setUpAppAndDb()
 		user := model.User{
 			FirstName: "John",
 			LastName:  "Doe",
@@ -172,7 +172,7 @@ func TestUserControllerIntegration(t *testing.T) {
 	})
 
 	t.Run("Creating a user with an existing name", func(t *testing.T) {
-		router, db, _, userRepository := setUpAppAndDb()
+		router, db, userRepository := setUpAppAndDb()
 		user := model.User{
 			FirstName: "John",
 			LastName:  "Doe",
