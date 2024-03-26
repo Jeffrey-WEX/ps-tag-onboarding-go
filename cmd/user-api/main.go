@@ -14,7 +14,7 @@ import (
 func main() {
 	fmt.Println("Starting Application!")
 	var userRepository = repository.NewRepository(database.NewDatabase())
-	var userValidator = service.NewUserValidationService(userRepository)
+	var userValidator = service.NewUserValidationService()
 	var userService = service.NewService(userRepository, userValidator)
 	var userController = controller.NewController(userService)
 	var routes = route.NewRoutes(userController)

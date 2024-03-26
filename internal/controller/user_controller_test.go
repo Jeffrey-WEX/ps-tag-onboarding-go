@@ -49,7 +49,7 @@ func TestUserControllerCreaterUser(t *testing.T) {
 	userService := new(service.UserServiceMock)
 	userController := NewController(userService)
 
-	user := model.User{
+	user := &model.User{
 		ID:        "1",
 		FirstName: "John",
 		LastName:  "Doe",
@@ -57,7 +57,7 @@ func TestUserControllerCreaterUser(t *testing.T) {
 		Age:       25,
 	}
 
-	userService.On("CreateUser", user).Return(user)
+	userService.On("CreateUser", user).Return(user, nil)
 
 	// Act
 	router.POST("/users", userController.CreateUser)
@@ -71,5 +71,5 @@ func TestUserControllerCreaterUser(t *testing.T) {
 	// Assert
 	userService.AssertCalled(t, "CreateUser", user)
 	assert.Equal(t, http.StatusCreated, w.Code)
-	assert.Equal(t, user, bodyResponse)
+	assert.Equal(t, user, &bodyResponse)
 }

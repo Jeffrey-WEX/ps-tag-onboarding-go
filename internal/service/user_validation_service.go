@@ -3,6 +3,7 @@ package service
 import (
 	"net/mail"
 
+	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
 )
@@ -11,50 +12,56 @@ type UserValidationService struct {
 	userRepository repository.IUserRepository
 }
 
-func NewUserValidationService(userRepository repository.IUserRepository) UserValidationService {
-	return UserValidationService{userRepository}
+func NewUserValidationService() UserValidationService {
+	return UserValidationService{}
 }
 
-func (service UserValidationService) ValidateUser(user model.User) (bool, model.User) {
-	validateAge(&user)
-	validateEmail(&user)
-	validateName(&user, service)
+func (service UserValidationService) ValidateUser(user *model.User) []string {
+	var errors []string
 
-	if len(user.ValidationErrors) > 0 {
-		return false, user
-
+	var error string = validateAge(user)
+	if error != "" {
+		errors = append(errors, error)
 	}
 
-	return true, user
+	error = validateEmail(user)
+	if error != "" {
+		errors = append(errors, error)
+	}
+
+	error = validateName(user)
+	if error != "" {
+		errors = append(errors, error)
+	}
+
+	return errors
 }
 
-func validateAge(user *model.User) {
+func validateAge(user *model.User) string {
 	if user.Age < 18 {
-		user.ValidationErrors = append(user.ValidationErrors, "User does not meet minimum age requirement")
+		return constant.ErrorAgeMinimum
 	}
+	return ""
 }
 
-func validateEmail(user *model.User) {
+func validateEmail(user *model.User) string {
 	if user.Email == "" {
-		user.ValidationErrors = append(user.ValidationErrors, "User email required")
-
+		return constant.ErrorEmailRequired
 	} else {
 		_, err := mail.ParseAddress(user.Email)
 
 		if err != nil {
-			user.ValidationErrors = append(user.ValidationErrors, "User email must be properly formatted")
+			return constant.ErrorEmailInvalidFormat
 		}
 	}
+
+	return ""
 }
 
-func validateName(user *model.User, service UserValidationService) {
+func validateName(user *model.User) string {
 	if user.FirstName == "" || user.LastName == "" {
-		user.ValidationErrors = append(user.ValidationErrors, "User first/last names required")
-	} else {
-		var existingUser = service.userRepository.FindUserByFirstLastName(user.FirstName, user.LastName)
-
-		if existingUser.ID != "" {
-			user.ValidationErrors = append(user.ValidationErrors, "User with the same first and last name already exists")
-		}
+		return constant.ErrorNameRequired
 	}
+
+	return ""
 }

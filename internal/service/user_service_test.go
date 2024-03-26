@@ -2,8 +2,10 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
+	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
 	"github.com/stretchr/testify/suite"
@@ -22,14 +24,14 @@ func TestUserService(t *testing.T) {
 
 func (suite *UserServiceTestSuite) SetupTest() {
 	suite.dbRepo = &repository.DbRepositoryMock{}
-	suite.userValidationService = NewUserValidationService(suite.dbRepo)
+	suite.userValidationService = NewUserValidationService()
 	suite.userService = NewService(suite.dbRepo, suite.userValidationService)
 
 }
 
 func (suite *UserServiceTestSuite) TestGetUserUsingExistingId_ReturnsUser() {
 	// Arrange
-	user := model.User{
+	user := &model.User{
 		ID:        "1",
 		FirstName: "John",
 		LastName:  "Doe",
@@ -37,14 +39,14 @@ func (suite *UserServiceTestSuite) TestGetUserUsingExistingId_ReturnsUser() {
 		Age:       25,
 	}
 
-	suite.dbRepo.On("GetUserById", "1").Return(&user, nil)
+	suite.dbRepo.On("GetUserById", "1").Return(user, nil)
 
 	// Act
 	result, _ := suite.userService.GetUserById(user.ID)
 
 	// Assert
 	suite.dbRepo.AssertCalled(suite.T(), "GetUserById", user.ID)
-	suite.Assert().Equal(user, *result)
+	suite.Assert().Equal(user, result)
 }
 
 func (suite *UserServiceTestSuite) TestGetUserUsingNonExistingId_ReturnsError() {
@@ -62,7 +64,7 @@ func (suite *UserServiceTestSuite) TestGetUserUsingNonExistingId_ReturnsError() 
 
 func (suite *UserServiceTestSuite) TestCreateValidUser_ReturnsUser() {
 	// Arrange
-	user := model.User{
+	user := &model.User{
 		ID:        "1",
 		FirstName: "John",
 		LastName:  "Doe",
@@ -70,22 +72,38 @@ func (suite *UserServiceTestSuite) TestCreateValidUser_ReturnsUser() {
 		Age:       25,
 	}
 
-	suite.dbRepo.On("CreateUser", user).Return(user)
-	suite.dbRepo.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(model.User{})
+	suite.dbRepo.On("CreateUser", user).Return(user, nil)
 
 	// Act
-	result := suite.userService.CreateUser(user)
+	newUser, errorMessage := suite.userService.CreateUser(user)
 
 	// Assert
-	suite.dbRepo.AssertCalled(suite.T(), "FindUserByFirstLastName", user.FirstName, user.LastName)
 	suite.dbRepo.AssertCalled(suite.T(), "CreateUser", user)
-	suite.Assert().Equal(user, result)
-	suite.Assert().Empty(user.ValidationErrors)
+	suite.Assert().Equal(user, newUser)
+	suite.Assert().Empty(errorMessage)
 }
 
 func (suite *UserServiceTestSuite) TestCreateInvalidUser_ReturnsError() {
 	// Arrange
-	user := model.User{
+	user := &model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoetest.com",
+		Age:       16,
+	}
+
+	// Act
+	newUser, errorMessage := suite.userService.CreateUser(user)
+
+	// Assert
+	suite.Assert().Nil(newUser)
+	suite.Assert().Equal(fmt.Sprintf("%s, %s", constant.ErrorAgeMinimum, constant.ErrorEmailInvalidFormat), errorMessage.ErrorMessage)
+}
+
+func (suite *UserServiceTestSuite) TestCreateExistingUser_ReturnsError() {
+	// Arrange
+	user := &model.User{
 		ID:        "1",
 		FirstName: "John",
 		LastName:  "Doe",
@@ -93,14 +111,13 @@ func (suite *UserServiceTestSuite) TestCreateInvalidUser_ReturnsError() {
 		Age:       24,
 	}
 
-	suite.dbRepo.On("FindUserByFirstLastName", user.FirstName, user.LastName).Return(user)
+	suite.dbRepo.On("CreateUser", user).Return(nil, errors.New(constant.ErrorNameAlreadyExists))
 
 	// Act
-	result := suite.userService.CreateUser(user)
+	newUser, errorMessage := suite.userService.CreateUser(user)
 
 	// Assert
-	suite.dbRepo.AssertNotCalled(suite.T(), "CreateUser", user)
-	suite.dbRepo.AssertCalled(suite.T(), "FindUserByFirstLastName", user.FirstName, user.LastName)
-	suite.Assert().NotEmpty(result.ValidationErrors)
-	suite.Assert().Equal("User with the same first and last name already exists", result.ValidationErrors[0])
+	suite.dbRepo.AssertCalled(suite.T(), "CreateUser", user)
+	suite.Assert().Nil(newUser)
+	suite.Assert().Equal(constant.ErrorNameAlreadyExists, errorMessage.ErrorMessage)
 }
