@@ -164,7 +164,6 @@ func TestUserControllerIntegration(t *testing.T) {
 			t.Fatalf("Error unmarshaling JSON: %v", err)
 		}
 
-		fmt.Println("ERROR MESSAGE: ", errorMessage)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		assert.Equal(t, http.StatusBadRequest, errorMessage.ErrorStatusCode)
 		assert.Equal(t, "User does not meet minimum age requirement, User email must be properly formatted", errorMessage.ErrorMessage)

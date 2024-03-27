@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/controller"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Starting Application!")
+	log.Println("Starting Application!")
 	var userRepository = repository.NewRepository(database.NewDatabase())
 	var userValidator = service.NewUserValidationService()
 	var userService = service.NewService(userRepository, userValidator)
@@ -27,6 +27,6 @@ func startHttpServer(routes route.Routes) {
 
 	err := router.Run(":8080")
 	if err != nil {
-		fmt.Printf("Error starting server: %v", err)
+		log.Printf("Error starting server: %v", err)
 	}
 }
