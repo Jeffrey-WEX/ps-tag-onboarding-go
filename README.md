@@ -31,11 +31,6 @@ curl -X GET http://localhost:8080/users/{id}
 ```
 NOTE: Replace `{id}` with the guid returned when creating the user
 
-## Get All Users
-```
-curl -X GET http://localhost:8080/users
-```
-
 # Technical proposal
 
 ## Gin Web Framework
