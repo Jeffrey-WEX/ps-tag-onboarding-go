@@ -7,13 +7,13 @@ import (
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
-	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
+	repomocks "github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
 type UserServiceTestSuite struct {
 	suite.Suite
-	dbRepo                *repository.DbRepositoryMock
+	dbRepo                *repomocks.IUserRepository
 	userValidationService UserValidationService
 	userService           UserService
 }
@@ -23,7 +23,7 @@ func TestUserService(t *testing.T) {
 }
 
 func (suite *UserServiceTestSuite) SetupTest() {
-	suite.dbRepo = &repository.DbRepositoryMock{}
+	suite.dbRepo = &repomocks.IUserRepository{}
 	suite.userValidationService = NewUserValidationService()
 	suite.userService = NewService(suite.dbRepo, suite.userValidationService)
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
-	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/service"
+	servicemock "github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/service/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,8 +16,8 @@ import (
 func TestControllerGetUserById(t *testing.T) {
 	// Arrange
 	router := gin.Default()
-	userService := new(service.UserServiceMock)
-	userController := NewController(userService)
+	userServiceMock := new(servicemock.IService)
+	userController := NewController(userServiceMock)
 
 	user := model.User{
 		ID:        "1",
@@ -27,7 +27,7 @@ func TestControllerGetUserById(t *testing.T) {
 		Age:       25,
 	}
 
-	userService.On("GetUserById", "1").Return(&user, nil)
+	userServiceMock.On("GetUserById", "1").Return(&user, nil)
 
 	// Act
 	router.GET("/users/:id", userController.GetUserById)
@@ -38,7 +38,7 @@ func TestControllerGetUserById(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &bodyResponse)
 
 	// Assert
-	userService.AssertCalled(t, "GetUserById", "1")
+	userServiceMock.AssertCalled(t, "GetUserById", "1")
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, user, bodyResponse)
 }
@@ -46,8 +46,8 @@ func TestControllerGetUserById(t *testing.T) {
 func TestUserControllerCreaterUser(t *testing.T) {
 	// Arrange
 	router := gin.Default()
-	userService := new(service.UserServiceMock)
-	userController := NewController(userService)
+	userServiceMock := new(servicemock.IService)
+	userController := NewController(userServiceMock)
 
 	user := &model.User{
 		ID:        "1",
@@ -57,7 +57,7 @@ func TestUserControllerCreaterUser(t *testing.T) {
 		Age:       25,
 	}
 
-	userService.On("CreateUser", user).Return(user, nil)
+	userServiceMock.On("CreateUser", user).Return(user, nil)
 
 	// Act
 	router.POST("/users", userController.CreateUser)
@@ -75,7 +75,7 @@ func TestUserControllerCreaterUser(t *testing.T) {
 	}
 
 	// Assert
-	userService.AssertCalled(t, "CreateUser", user)
+	userServiceMock.AssertCalled(t, "CreateUser", user)
 	assert.Equal(t, http.StatusCreated, w.Code)
 	assert.Equal(t, user, &bodyResponse)
 }
