@@ -8,116 +8,150 @@ import (
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository/mocks"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
 )
 
-type UserServiceTestSuite struct {
-	suite.Suite
-	dbRepo                *mocks.IUserRepository
-	userValidationService UserValidationService
-	userService           UserService
+func setUpRepoandService() (UserService, *mocks.IUserRepository) {
+	dbRepo := &mocks.IUserRepository{}
+	userValidationService := NewUserValidationService()
+	userService := NewService(dbRepo, userValidationService)
+	return userService, dbRepo
 }
 
-func TestUserService(t *testing.T) {
-	suite.Run(t, new(UserServiceTestSuite))
+func TestGetUserById(t *testing.T) {
+	t.Run("Get user sucessfully", func(t *testing.T) {
+		// Arrange
+		userService, dbRepo := setUpRepoandService()
+		user := &model.User{
+			ID:        "1",
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "JohnDoe@test.com",
+			Age:       25,
+		}
+
+		dbRepo.On("GetUserById", "1").Return(user, nil)
+
+		// Act
+		result, _ := userService.GetUserById(user.ID)
+
+		// Assert
+		dbRepo.AssertCalled(t, "GetUserById", user.ID)
+		assert.Equal(t, user, result)
+	})
+
+	t.Run("Get user return error when user not found", func(t *testing.T) {
+		// Arrange
+		userService, dbRepo := setUpRepoandService()
+		dbRepo.On("GetUserById", "1").Return(nil, errors.New(constant.ErrorUserNotFound))
+
+		// Act
+		result, err := userService.GetUserById("1")
+
+		// Assert
+		dbRepo.AssertCalled(t, "GetUserById", "1")
+		assert.Nil(t, result)
+		assert.NotNil(t, err)
+	})
+
+	t.Run("Get user return error when database returns error", func(t *testing.T) {
+		// Arrange
+		userService, dbRepo := setUpRepoandService()
+		dbRepo.On("GetUserById", "1").Return(nil, errors.New(constant.ErrorFindingUser))
+
+		// Act
+		result, err := userService.GetUserById("1")
+
+		// Assert
+		dbRepo.AssertCalled(t, "GetUserById", "1")
+		assert.Nil(t, result)
+		assert.NotNil(t, err)
+	})
 }
 
-func (suite *UserServiceTestSuite) SetupTest() {
-	suite.dbRepo = &mocks.IUserRepository{}
-	suite.userValidationService = NewUserValidationService()
-	suite.userService = NewService(suite.dbRepo, suite.userValidationService)
+func TestCreateUser(t *testing.T) {
+	t.Run("Create user successfully", func(t *testing.T) {
+		// Arrange
+		userService, dbRepo := setUpRepoandService()
+		user := &model.User{
+			ID:        "1",
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "JohnDoe@test.com",
+			Age:       25,
+		}
 
-}
+		dbRepo.On("CreateUser", user).Return(user, nil)
 
-func (suite *UserServiceTestSuite) TestGetUserUsingExistingId_ReturnsUser() {
-	// Arrange
-	user := &model.User{
-		ID:        "1",
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "JohnDoe@test.com",
-		Age:       25,
-	}
+		// Act
+		newUser, errorMessage := userService.CreateUser(user)
 
-	suite.dbRepo.On("GetUserById", "1").Return(user, nil)
+		// Assert
+		dbRepo.AssertCalled(t, "CreateUser", user)
+		assert.Equal(t, user, newUser)
+		assert.Empty(t, errorMessage)
+	})
 
-	// Act
-	result, _ := suite.userService.GetUserById(user.ID)
+	t.Run("Create invalid user returns error", func(t *testing.T) {
+		// Arrange
+		userService, _ := setUpRepoandService()
+		user := &model.User{
+			ID:        "1",
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "JohnDoetest.com",
+			Age:       16,
+		}
 
-	// Assert
-	suite.dbRepo.AssertCalled(suite.T(), "GetUserById", user.ID)
-	suite.Assert().Equal(user, result)
-}
+		// Act
+		newUser, errorMessage := userService.CreateUser(user)
 
-func (suite *UserServiceTestSuite) TestGetUserUsingNonExistingId_ReturnsError() {
-	// Arrange
-	suite.dbRepo.On("GetUserById", "1").Return(nil, errors.New("user not found"))
+		// Assert
+		assert.Nil(t, newUser)
+		assert.Equal(t, fmt.Sprintf("%s, %s", constant.ErrorAgeMinimum, constant.ErrorEmailInvalidFormat), errorMessage.ErrorMessage)
+	})
 
-	// Act
-	result, err := suite.userService.GetUserById("1")
+	t.Run("Create existing user returns error", func(t *testing.T) {
+		// Arrange
+		userService, dbRepo := setUpRepoandService()
+		user := &model.User{
+			ID:        "1",
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "JohnDoe@test.com",
+			Age:       24,
+		}
 
-	// Assert
-	suite.dbRepo.AssertCalled(suite.T(), "GetUserById", "1")
-	suite.Assert().Nil(result)
-	suite.Assert().NotNil(err)
-}
+		dbRepo.On("CreateUser", user).Return(nil, errors.New(constant.ErrorNameAlreadyExists))
 
-func (suite *UserServiceTestSuite) TestCreateValidUser_ReturnsUser() {
-	// Arrange
-	user := &model.User{
-		ID:        "1",
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "JohnDoe@test.com",
-		Age:       25,
-	}
+		// Act
+		newUser, errorMessage := userService.CreateUser(user)
 
-	suite.dbRepo.On("CreateUser", user).Return(user, nil)
+		// Assert
+		dbRepo.AssertCalled(t, "CreateUser", user)
+		assert.Nil(t, newUser)
+		assert.Equal(t, constant.ErrorNameAlreadyExists, errorMessage.ErrorMessage)
+	})
 
-	// Act
-	newUser, errorMessage := suite.userService.CreateUser(user)
+	t.Run("Create user returns error when database returns error", func(t *testing.T) {
+		// Arrange
+		userService, dbRepo := setUpRepoandService()
+		user := &model.User{
+			ID:        "1",
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "JohnDoe@test.com",
+			Age:       24,
+		}
 
-	// Assert
-	suite.dbRepo.AssertCalled(suite.T(), "CreateUser", user)
-	suite.Assert().Equal(user, newUser)
-	suite.Assert().Empty(errorMessage)
-}
+		dbRepo.On("CreateUser", user).Return(nil, errors.New(constant.ErrorCreatingUser))
 
-func (suite *UserServiceTestSuite) TestCreateInvalidUser_ReturnsError() {
-	// Arrange
-	user := &model.User{
-		ID:        "1",
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "JohnDoetest.com",
-		Age:       16,
-	}
+		// Act
+		newUser, errorMessage := userService.CreateUser(user)
 
-	// Act
-	newUser, errorMessage := suite.userService.CreateUser(user)
-
-	// Assert
-	suite.Assert().Nil(newUser)
-	suite.Assert().Equal(fmt.Sprintf("%s, %s", constant.ErrorAgeMinimum, constant.ErrorEmailInvalidFormat), errorMessage.ErrorMessage)
-}
-
-func (suite *UserServiceTestSuite) TestCreateExistingUser_ReturnsError() {
-	// Arrange
-	user := &model.User{
-		ID:        "1",
-		FirstName: "John",
-		LastName:  "Doe",
-		Email:     "JohnDoe@test.com",
-		Age:       24,
-	}
-
-	suite.dbRepo.On("CreateUser", user).Return(nil, errors.New(constant.ErrorNameAlreadyExists))
-
-	// Act
-	newUser, errorMessage := suite.userService.CreateUser(user)
-
-	// Assert
-	suite.dbRepo.AssertCalled(suite.T(), "CreateUser", user)
-	suite.Assert().Nil(newUser)
-	suite.Assert().Equal(constant.ErrorNameAlreadyExists, errorMessage.ErrorMessage)
+		// Assert
+		dbRepo.AssertCalled(t, "CreateUser", user)
+		assert.Nil(t, newUser)
+		assert.Equal(t, constant.ErrorCreatingUser, errorMessage.ErrorMessage)
+	})
 }
