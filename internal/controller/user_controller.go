@@ -42,6 +42,7 @@ func (controller UserController) CreateUser(context *gin.Context) {
 
 	if errorMessage != nil {
 		context.IndentedJSON(errorMessage.ErrorStatusCode, gin.H{"status_code": errorMessage.ErrorStatusCode, "message": errorMessage.ErrorMessage})
+		return
 	} else {
 		context.IndentedJSON(http.StatusCreated, newUser)
 	}
