@@ -8,7 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Database struct {
+type IMongoCollection interface {
+	Find(ctx context.Context, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error)
+	FindOne(ctx context.Context, filter interface{}, opts ...*options.FindOneOptions) *mongo.SingleResult
+	InsertOne(ctx context.Context, document interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error)
 }
 
 func NewDatabase() *mongo.Database {
