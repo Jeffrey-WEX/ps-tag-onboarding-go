@@ -1,7 +1,7 @@
 # ps-tag-onboarding-go
 
 # How to run
-At the root flder of the project run `docker compose up --build` to run the mongodb and the go application.
+At the root folder of the project run `docker compose up --build` to run the mongodb and the go application.
 
 Once you see these messages in the console, the application is ready to be used:
 ```
