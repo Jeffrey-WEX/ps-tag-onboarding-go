@@ -12,7 +12,7 @@ ps-tag-onboarding-go-api-1             | [GIN-debug] [WARNING] Running in "debug
 ps-tag-onboarding-go-api-1             |  - using env:  export GIN_MODE=release
 ps-tag-onboarding-go-api-1             |  - using code: gin.SetMode(gin.ReleaseMode)
 ps-tag-onboarding-go-api-1             | 
-ps-tag-onboarding-go-api-1             | [GIN-debug] GET    /users                    --> github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/controller.UserController.GetAllUsers-fm (3 handlers)ps-tag-onboarding-go-api-1             | [GIN-debug] GET    /users/:id                --> github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/controller.UserController.GetUserById-fm (3 handlers)ps-tag-onboarding-go-api-1             | [GIN-debug] POST   /users                    --> github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/controller.UserController.CreateUser-fm (3 handlers) 
+ps-tag-onboarding-go-api-1             | [GIN-debug] GET    /users/:id                --> github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/controller.UserController.GetUserById-fm (3 handlers)ps-tag-onboarding-go-api-1             | [GIN-debug] POST   /users                    --> github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/controller.UserController.CreateUser-fm (3 handlers) 
 ps-tag-onboarding-go-api-1             | [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 ps-tag-onboarding-go-api-1             | Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
 ps-tag-onboarding-go-api-1             | [GIN-debug] Listening and serving HTTP on :8080
