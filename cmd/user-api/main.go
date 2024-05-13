@@ -15,7 +15,7 @@ func main() {
 	log.Println("Starting Application!")
 	var userRepository = repository.NewRepository(database.NewDatabase())
 	var userValidator = service.NewUserValidationService()
-	var userService = service.NewService(userRepository, userValidator)
+	var userService = service.NewService(userRepository, *userValidator)
 	var userController = controller.NewController(userService)
 	var routes = route.NewRoutes(userController)
 	startHttpServer(routes)

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setUpRepoandService() (*UserService, *mocks.IUserRepository) {
+func setUpRepoAndService() (*UserService, *mocks.IUserRepository) {
 	dbRepo := &mocks.IUserRepository{}
 	userValidationService := NewUserValidationService()
 	userService := NewService(dbRepo, *userValidationService)
@@ -21,7 +21,7 @@ func setUpRepoandService() (*UserService, *mocks.IUserRepository) {
 func TestGetUserById(t *testing.T) {
 	t.Run("Get user sucessfully", func(t *testing.T) {
 		// Arrange
-		userService, dbRepo := setUpRepoandService()
+		userService, dbRepo := setUpRepoAndService()
 		user := &model.User{
 			ID:        "1",
 			FirstName: "John",
@@ -42,7 +42,7 @@ func TestGetUserById(t *testing.T) {
 
 	t.Run("Get user return error when user not found", func(t *testing.T) {
 		// Arrange
-		userService, dbRepo := setUpRepoandService()
+		userService, dbRepo := setUpRepoAndService()
 		dbRepo.On("GetUserById", "1").Return(nil, errors.New(constant.ErrorUserNotFound))
 
 		// Act
@@ -57,7 +57,7 @@ func TestGetUserById(t *testing.T) {
 
 	t.Run("Get user return error when database returns error", func(t *testing.T) {
 		// Arrange
-		userService, dbRepo := setUpRepoandService()
+		userService, dbRepo := setUpRepoAndService()
 		dbRepo.On("GetUserById", "1").Return(nil, errors.New(constant.ErrorGettingUser))
 
 		// Act
@@ -74,7 +74,7 @@ func TestGetUserById(t *testing.T) {
 func TestCreateUser(t *testing.T) {
 	t.Run("Create user successfully", func(t *testing.T) {
 		// Arrange
-		userService, dbRepo := setUpRepoandService()
+		userService, dbRepo := setUpRepoAndService()
 		user := &model.User{
 			ID:        "1",
 			FirstName: "John",
@@ -96,7 +96,7 @@ func TestCreateUser(t *testing.T) {
 
 	t.Run("Create invalid user returns error", func(t *testing.T) {
 		// Arrange
-		userService, _ := setUpRepoandService()
+		userService, _ := setUpRepoAndService()
 		user := &model.User{
 			ID:        "1",
 			FirstName: "John",
@@ -115,7 +115,7 @@ func TestCreateUser(t *testing.T) {
 
 	t.Run("Create existing user returns error", func(t *testing.T) {
 		// Arrange
-		userService, dbRepo := setUpRepoandService()
+		userService, dbRepo := setUpRepoAndService()
 		user := &model.User{
 			ID:        "1",
 			FirstName: "John",
@@ -137,7 +137,7 @@ func TestCreateUser(t *testing.T) {
 
 	t.Run("Create user returns error when database returns error", func(t *testing.T) {
 		// Arrange
-		userService, dbRepo := setUpRepoandService()
+		userService, dbRepo := setUpRepoAndService()
 		user := &model.User{
 			ID:        "1",
 			FirstName: "John",
