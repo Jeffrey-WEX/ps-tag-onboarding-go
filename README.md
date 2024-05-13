@@ -62,9 +62,10 @@ Testify also has a huge community of contributors and users, so there are many d
 ## MongoDB
 
 ### What
-MongoDB, known for its flexibility and scalability. It is a good choice for this application as it allows for easy storage and retrieval of data.
+MongoDB is a document database known for its flexibility and scalability. It is a good choice for this application as it allows for easy storage and retrieval of data.
 
 ### Why
-- Storing data in JSON format
+- Storing data in JSON format, which is easy to work with
+- Free to use
 
 MongoDB is used by many services in TAG, which I haven't worked with before. So this is a good opportunity to get familiar with it.
