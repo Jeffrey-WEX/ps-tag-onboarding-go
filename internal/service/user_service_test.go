@@ -52,6 +52,7 @@ func TestGetUserById(t *testing.T) {
 		dbRepo.AssertCalled(t, "GetUserById", "1")
 		assert.Nil(t, result)
 		assert.NotNil(t, err)
+		assert.Equal(t, constant.ErrorUserNotFound, err.ErrorMessage)
 	})
 
 	t.Run("Get user return error when database returns error", func(t *testing.T) {
@@ -66,6 +67,7 @@ func TestGetUserById(t *testing.T) {
 		dbRepo.AssertCalled(t, "GetUserById", "1")
 		assert.Nil(t, result)
 		assert.NotNil(t, err)
+		assert.Equal(t, constant.ErrorFindingUser, err.ErrorMessage)
 	})
 }
 
