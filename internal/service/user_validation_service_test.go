@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setUpUserValidationService() *UserValidationService {
+func setUpUserValidationService() UserValidationService {
 	return NewUserValidationService()
 }
 

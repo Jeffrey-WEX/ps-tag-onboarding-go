@@ -13,8 +13,8 @@ type UserController struct {
 	service service.IService
 }
 
-func NewController(service service.IService) *UserController {
-	return &UserController{service}
+func NewController(service service.IService) UserController {
+	return UserController{service}
 }
 
 func (controller UserController) GetUserById(context *gin.Context) {

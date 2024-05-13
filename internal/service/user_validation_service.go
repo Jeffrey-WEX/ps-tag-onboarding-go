@@ -10,8 +10,8 @@ import (
 type UserValidationService struct {
 }
 
-func NewUserValidationService() *UserValidationService {
-	return &UserValidationService{}
+func NewUserValidationService() UserValidationService {
+	return UserValidationService{}
 }
 
 func (service UserValidationService) ValidateUser(user *model.User) []string {

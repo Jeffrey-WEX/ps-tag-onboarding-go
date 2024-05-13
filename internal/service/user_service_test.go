@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setUpRepoandService() (*UserService, *mocks.IUserRepository) {
+func setUpRepoandService() (UserService, *mocks.IUserRepository) {
 	dbRepo := &mocks.IUserRepository{}
 	userValidationService := NewUserValidationService()
 	userService := NewService(dbRepo, userValidationService)
@@ -58,7 +58,7 @@ func TestGetUserById(t *testing.T) {
 	t.Run("Get user return error when database returns error", func(t *testing.T) {
 		// Arrange
 		userService, dbRepo := setUpRepoandService()
-		dbRepo.On("GetUserById", "1").Return(nil, errors.New(constant.ErrorGettingUser))
+		dbRepo.On("GetUserById", "1").Return(nil, errors.New(constant.ErrorFindingUser))
 
 		// Act
 		result, err := userService.GetUserById("1")
@@ -67,7 +67,7 @@ func TestGetUserById(t *testing.T) {
 		dbRepo.AssertCalled(t, "GetUserById", "1")
 		assert.Nil(t, result)
 		assert.NotNil(t, err)
-		assert.Equal(t, constant.ErrorGettingUser, err.ErrorMessage)
+		assert.Equal(t, constant.ErrorFindingUser, err.ErrorMessage)
 	})
 }
 

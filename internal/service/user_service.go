@@ -15,8 +15,8 @@ type UserService struct {
 	userValidation UserValidationService
 }
 
-func NewService(userRepository repository.IUserRepository, userValidation *UserValidationService) *UserService {
-	return &UserService{userRepository, *userValidation}
+func NewService(userRepository repository.IUserRepository, userValidation UserValidationService) UserService {
+	return UserService{userRepository, userValidation}
 }
 
 func (service UserService) GetUserById(userId string) (*model.User, *errormessage.ErrorMessage) {
