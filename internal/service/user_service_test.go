@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setUpRepoandService() (UserService, *mocks.IUserRepository) {
+func setUpRepoandService() (*UserService, *mocks.IUserRepository) {
 	dbRepo := &mocks.IUserRepository{}
 	userValidationService := NewUserValidationService()
-	userService := NewService(dbRepo, userValidationService)
+	userService := NewService(dbRepo, *userValidationService)
 	return userService, dbRepo
 }
 
