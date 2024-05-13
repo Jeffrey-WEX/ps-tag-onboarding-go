@@ -34,10 +34,37 @@ NOTE: Replace `{id}` with the guid returned when creating the user
 # Technical proposal
 
 ## Gin Web Framework
-Gin Web Framework is known for its high performance and HTTP requests processing speed. The framework is sufficient for building a simple application with simple endpoints for CRUD operations. Gin supports middleware stack so it is possible to have multiple middleware functions together and apply them to specific routes or group of routes. The benefits of middleware allows request to be processed in a specific order and can be used to perform operations such as logging, and authentication. For example, if there is an authentication middleware, then the user will be authenticated before the request is sent through to the handler and rest of the application.
+
+### What
+Gin Web Framework is known for its high performance and HTTP requests processing speed. The framework is sufficient for building a simple application with simple endpoints for CRUD operations.
+
+### Why
+For this project, Gin has features that can help with:
+- Converting the JSON playload to a struct and vice versa
+- Routing API endpoints to the appropriate handler functions
+- Middleware support, currently being used to return the status code and error message. This can be extended to include other functionalities like logging and authentication.
 
 ## Testify Framework
-Testify framework allows for easy testing of the application. It provides a set of helper functions that can be used to test the application. Specifically the assert package provides many functions that makes validating the conditions or testing the behaviour of the code much easier. The framework also provides a mock package that can be used to mock the database and other dependencies. This is useful for testing the application without having to rely on the actual database. Testify also has a huge community of contributors and users, so there are many documentations and resources online to help with any issues that may arise. 
+
+### What
+Testify framework allows for easy testing of the application. It provides a set of helper functions that can be used to test the application. The framework has a number of packages that can be used to test the application including:
+- Assert package: This package is used to validate the conditions or test the behaviour of the code
+- Mock package: This package is used to mock the database and other dependencies
+
+### Why
+The benefits of using testify to test the application include:
+- Easy to use UI for debugging
+- Assertion are easy to read and understand
+- Mocking the database and other dependencies when testing
+
+Testify also has a huge community of contributors and users, so there are many documentations and resources online to help with any issues that may arise. It is also used by many TAG services, so I can get some experience with using this framework for testing.
 
 ## MongoDB
+
+### What
 MongoDB, known for its flexibility and scalability. It is a good choice for this application as it allows for easy storage and retrieval of data.
+
+### Why
+- Storing data in JSON format
+
+MongoDB is used by many services in TAG, which I haven't worked with before. So this is a good opportunity to get familiar with it.
