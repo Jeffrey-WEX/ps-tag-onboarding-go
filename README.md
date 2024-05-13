@@ -34,10 +34,10 @@ NOTE: Replace `{id}` with the guid returned when creating the user
 # Technical proposal
 
 ## Gin Web Framework
-Gin Web Framework is known for its high performance and HTTP requests processing speed.The framework is sufficient for building a simple application with simple endpoints for CRUD operations.
+Gin Web Framework is known for its high performance and HTTP requests processing speed. The framework is sufficient for building a simple application with simple endpoints for CRUD operations. Gin supports middleware stack so it is possible to have multiple middleware functions together and apply them to specific routes or group of routes. The benefits of middleware allows request to be processed in a specific order and can be used to perform operations such as logging, and authentication. For example, if there is an authentication middleware, then the user will be authenticated before the request is sent through to the handler and rest of the application.
 
 ## Testify Framework
-Testify framework allows for easy testing of the application. It provides a set of helper functions that can be used to test the application.
+Testify framework allows for easy testing of the application. It provides a set of helper functions that can be used to test the application. Specifically the assert package provides many functions that makes validating the conditions or testing the behaviour of the code much easier. The framework also provides a mock package that can be used to mock the database and other dependencies. This is useful for testing the application without having to rely on the actual database. Testify also has a huge community of contributors and users, so there are many documentations and resources online to help with any issues that may arise. 
 
 ## MongoDB
 MongoDB, known for its flexibility and scalability. It is a good choice for this application as it allows for easy storage and retrieval of data.
