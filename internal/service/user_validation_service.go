@@ -5,11 +5,9 @@ import (
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
-	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
 )
 
 type UserValidationService struct {
-	userRepository repository.IUserRepository
 }
 
 func NewUserValidationService() UserValidationService {

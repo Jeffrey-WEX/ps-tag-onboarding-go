@@ -12,7 +12,7 @@ import (
 
 type UserService struct {
 	userRepository repository.IUserRepository
-	UserValidation UserValidationService
+	userValidation UserValidationService
 }
 
 func NewService(userRepository repository.IUserRepository, userValidation UserValidationService) UserService {
@@ -36,7 +36,7 @@ func (service UserService) GetUserById(userId string) (*model.User, *errormessag
 }
 
 func (service UserService) CreateUser(user *model.User) (*model.User, *errormessage.ErrorMessage) {
-	var errors []string = service.UserValidation.ValidateUser(user)
+	var errors []string = service.userValidation.ValidateUser(user)
 	if len(errors) > 0 {
 		errorMessage := errormessage.NewErrorMessage(strings.Join(errors, ", "), http.StatusBadRequest)
 		return nil, &errorMessage
