@@ -3,11 +3,17 @@ package service
 import (
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/errormessage"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
+)
+
+var (
+	once    sync.Once
+	service *UserService
 )
 
 type UserService struct {
@@ -16,7 +22,10 @@ type UserService struct {
 }
 
 func NewService(userRepository repository.IUserRepository, userValidation UserValidationService) *UserService {
-	return &UserService{userRepository, userValidation}
+	once.Do(func() {
+		service = &UserService{userRepository, userValidation}
+	})
+	return service
 }
 
 func (service UserService) GetUserById(userId string) (*model.User, *errormessage.ErrorMessage) {

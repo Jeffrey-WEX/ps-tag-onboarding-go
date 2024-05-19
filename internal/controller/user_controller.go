@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
@@ -9,12 +10,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	once       sync.Once
+	controller *UserController
+)
+
 type UserController struct {
 	service service.IService
 }
 
 func NewController(service service.IService) *UserController {
-	return &UserController{service}
+	once.Do(func() {
+		controller = &UserController{service}
+	})
+	return controller
 }
 
 func (controller UserController) GetUserById(context *gin.Context) {
