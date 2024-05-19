@@ -58,7 +58,7 @@ func TestUserControllerIntegration(t *testing.T) {
 	t.Run("Return not found when finding a non-existing user", func(t *testing.T) {
 		router, db, _ := setUpAppAndDb()
 
-		req, _ := http.NewRequest("GET", "/users/1", nil)
+		req, _ := http.NewRequest("GET", "/v1/users/1", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -86,7 +86,7 @@ func TestUserControllerIntegration(t *testing.T) {
 			Age:       25,
 		}
 		userRepository.CreateUser(&user)
-		url := fmt.Sprintf("/users/%s", user.ID)
+		url := fmt.Sprintf("/v1/users/%s", user.ID)
 		req, _ := http.NewRequest("GET", url, nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
@@ -122,7 +122,7 @@ func TestUserControllerIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error marshaling JSON: %v", err)
 		}
-		req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
+		req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer(jsonValue))
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -154,7 +154,7 @@ func TestUserControllerIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error marshaling JSON: %v", err)
 		}
-		req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
+		req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer(jsonValue))
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -188,7 +188,7 @@ func TestUserControllerIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error marshaling JSON: %v", err)
 		}
-		req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(jsonValue))
+		req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer(jsonValue))
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
