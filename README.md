@@ -22,12 +22,12 @@ ps-tag-onboarding-go-api-1             | [GIN-debug] Listening and serving HTTP 
 
 ## Create a new user
 ```
-curl -X POST http://localhost:8080/users -H 'Content-Type: application/json' -d '{"first_name":"John","last_name":"Doe","email":"JohnDoe@test.com","age":24}'
+curl -X POST http://localhost:8080/v1/users -H 'Content-Type: application/json' -d '{"first_name":"John","last_name":"Doe","email":"JohnDoe@test.com","age":24}'
 ```
 
 ## Get User By id
 ```
-curl -X GET http://localhost:8080/users/{id}
+curl -X GET http://localhost:8080/v1/users/{id}
 ```
 NOTE: Replace `{id}` with the guid returned when creating the user
 

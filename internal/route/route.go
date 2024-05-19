@@ -18,6 +18,6 @@ func NewRoutes(controller controller.IController) Routes {
 }
 
 func (r *Routes) InitializeRouter(router *gin.Engine) {
-	router.GET("/users/:id", r.controller.GetUserById)
-	router.POST("/users", r.controller.CreateUser)
+	router.GET("/v1/users/:id", r.controller.GetUserById)
+	router.POST("/v1/users", r.controller.CreateUser)
 }
