@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync"
 	"testing"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
@@ -18,6 +19,7 @@ import (
 )
 
 func getGinContext(w *httptest.ResponseRecorder) *gin.Context {
+	once = sync.Once{}
 	gin.SetMode(gin.TestMode)
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request = &http.Request{
@@ -32,7 +34,7 @@ func TestControllerGetUserById(t *testing.T) {
 
 	t.Run("Get user sucessfully", func(t *testing.T) {
 		// Arrange
-		userServiceMock := new(mocks.IService)
+		userServiceMock := new(mocks.IUserService)
 		userController := NewController(userServiceMock)
 		w := httptest.NewRecorder()
 		ctx := getGinContext(w)
@@ -66,7 +68,7 @@ func TestControllerGetUserById(t *testing.T) {
 
 	t.Run("Get user failed with error message returned", func(t *testing.T) {
 		// Arrange
-		userServiceMock := new(mocks.IService)
+		userServiceMock := new(mocks.IUserService)
 		userController := NewController(userServiceMock)
 		w := httptest.NewRecorder()
 		ctx := getGinContext(w)
@@ -100,7 +102,7 @@ func TestUserControllerCreateUser(t *testing.T) {
 
 	t.Run("Create user successfully", func(t *testing.T) {
 		// Arrange
-		userServiceMock := new(mocks.IService)
+		userServiceMock := new(mocks.IUserService)
 		userController := NewController(userServiceMock)
 		w := httptest.NewRecorder()
 		ctx := getGinContext(w)
@@ -138,7 +140,7 @@ func TestUserControllerCreateUser(t *testing.T) {
 
 	t.Run("Create user failed with bad JSON", func(t *testing.T) {
 		// Arrange
-		userServiceMock := new(mocks.IService)
+		userServiceMock := new(mocks.IUserService)
 		userController := NewController(userServiceMock)
 		w := httptest.NewRecorder()
 		ctx := getGinContext(w)
@@ -162,7 +164,7 @@ func TestUserControllerCreateUser(t *testing.T) {
 
 	t.Run("Create user failed with error message returned", func(t *testing.T) {
 		// Arrange
-		userServiceMock := new(mocks.IService)
+		userServiceMock := new(mocks.IUserService)
 		userController := NewController(userServiceMock)
 		w := httptest.NewRecorder()
 		ctx := getGinContext(w)

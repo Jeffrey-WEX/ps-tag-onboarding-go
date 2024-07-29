@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
@@ -11,8 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setUpRepoAndService() (*UserService, *mocks.IUserRepository) {
-	dbRepo := &mocks.IUserRepository{}
+func setUpRepoAndService() (*UserService, *mocks.IDbRepository) {
+	once = sync.Once{}
+	dbRepo := new(mocks.IDbRepository)
 	userValidationService := NewUserValidationService()
 	userService := NewService(dbRepo, *userValidationService)
 	return userService, dbRepo

@@ -11,11 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func setupDatabase() *mocks.IMongoCollectionMock {
-	return &mocks.IMongoCollectionMock{}
+func setupDatabase() *mocks.IMongoCollection {
+	return new(mocks.IMongoCollection)
 }
 
 func TestDbRepository_GetUserByID(t *testing.T) {
@@ -34,13 +33,13 @@ func TestDbRepository_GetUserByID(t *testing.T) {
 		}
 
 		query := bson.M{"_id": bson.M{"$eq": user.ID}}
-		collectionMock.On("FindOne", context.TODO(), query, []*options.FindOneOptions(nil)).Return(mongo.NewSingleResultFromDocument(&user, nil, nil))
+		collectionMock.On("FindOne", context.TODO(), query).Return(mongo.NewSingleResultFromDocument(&user, nil, nil))
 
 		// Act
 		result, _ := dbRepo.GetUserById(user.ID)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.TODO(), query, []*options.FindOneOptions(nil)))
+		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.TODO(), query))
 		assert.Equal(t, user.ID, result.ID)
 		assert.Equal(t, user.FirstName, result.FirstName)
 		assert.Equal(t, user.LastName, result.LastName)
@@ -63,12 +62,12 @@ func TestDbRepository_GetUserByID(t *testing.T) {
 		}
 
 		query := bson.M{"_id": bson.M{"$eq": user.ID}}
-		collectionMock.On("FindOne", context.TODO(), query, []*options.FindOneOptions(nil)).Return(mongo.NewSingleResultFromDocument(&mongo.SingleResult{}, mongo.ErrNoDocuments, nil))
+		collectionMock.On("FindOne", context.TODO(), query).Return(mongo.NewSingleResultFromDocument(&mongo.SingleResult{}, mongo.ErrNoDocuments, nil))
 		// Act
 		result, err := dbRepo.GetUserById(user.ID)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.TODO(), query, []*options.FindOneOptions(nil)))
+		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.TODO(), query))
 		assert.EqualError(t, err, constant.ErrorUserNotFound)
 		assert.Nil(t, result)
 	})
@@ -87,13 +86,13 @@ func TestDbRepository_GetUserByID(t *testing.T) {
 		}
 
 		query := bson.M{"_id": bson.M{"$eq": user.ID}}
-		collectionMock.On("FindOne", context.TODO(), query, []*options.FindOneOptions(nil)).Return(mongo.NewSingleResultFromDocument(nil, nil, nil))
+		collectionMock.On("FindOne", context.TODO(), query).Return(mongo.NewSingleResultFromDocument(nil, nil, nil))
 
 		// Act
 		result, err := dbRepo.GetUserById(user.ID)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.TODO(), query, []*options.FindOneOptions(nil)))
+		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.TODO(), query))
 		assert.EqualError(t, err, constant.ErrorGettingUser)
 		assert.Nil(t, result)
 	})
@@ -113,15 +112,15 @@ func TestDbRepository_CreateUser(t *testing.T) {
 		}
 
 		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
-		collectionMock.On("Find", context.Background(), query, []*options.FindOptions(nil)).Return(mongo.NewCursorFromDocuments(nil, nil, nil))
-		collectionMock.On("InsertOne", context.TODO(), &user, []*options.InsertOneOptions(nil)).Return(&mongo.InsertOneResult{}, nil, nil)
+		collectionMock.On("Find", context.Background(), query).Return(mongo.NewCursorFromDocuments(nil, nil, nil))
+		collectionMock.On("InsertOne", context.TODO(), &user).Return(&mongo.InsertOneResult{}, nil, nil)
 
 		// Act
 		result, err := dbRepo.CreateUser(&user)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query, []*options.FindOptions(nil)))
-		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.TODO(), &user, []*options.InsertOneOptions(nil)))
+		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
+		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.TODO(), &user))
 		assert.Nil(t, err)
 		assert.Equal(t, user.FirstName, result.FirstName)
 		assert.Equal(t, user.LastName, result.LastName)
@@ -142,15 +141,15 @@ func TestDbRepository_CreateUser(t *testing.T) {
 		}
 
 		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
-		collectionMock.On("Find", context.Background(), query, []*options.FindOptions(nil)).Return(mongo.NewCursorFromDocuments(nil, nil, nil))
-		collectionMock.On("InsertOne", context.TODO(), &user, []*options.InsertOneOptions(nil)).Return(&mongo.InsertOneResult{}, errors.New(constant.ErrorCreatingUser), nil)
+		collectionMock.On("Find", context.Background(), query).Return(mongo.NewCursorFromDocuments(nil, nil, nil))
+		collectionMock.On("InsertOne", context.TODO(), &user).Return(&mongo.InsertOneResult{}, errors.New(constant.ErrorCreatingUser), nil)
 
 		// Act
 		result, err := dbRepo.CreateUser(&user)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query, []*options.FindOptions(nil)))
-		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.TODO(), &user, []*options.InsertOneOptions(nil)))
+		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
+		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.TODO(), &user))
 		assert.EqualError(t, err, constant.ErrorCreatingUser)
 		assert.Nil(t, result)
 	})
@@ -171,13 +170,13 @@ func TestDbRepository_FindUserByFirstLastName(t *testing.T) {
 		}
 
 		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
-		collectionMock.On("Find", context.Background(), query, []*options.FindOptions(nil)).Return(mongo.NewCursorFromDocuments([]interface{}{user}, nil, nil))
+		collectionMock.On("Find", context.Background(), query).Return(mongo.NewCursorFromDocuments([]interface{}{user}, nil, nil))
 
 		// Act
 		result, _ := dbRepo.FindUserByFirstLastName(user.FirstName, user.LastName)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query, []*options.FindOptions(nil)))
+		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
 		assert.Equal(t, user.FirstName, result.FirstName)
 		assert.Equal(t, user.LastName, result.LastName)
 		assert.Equal(t, user.Email, result.Email)
@@ -197,13 +196,13 @@ func TestDbRepository_FindUserByFirstLastName(t *testing.T) {
 		}
 
 		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
-		collectionMock.On("Find", context.Background(), query, []*options.FindOptions(nil)).Return(&mongo.Cursor{}, errors.New(constant.ErrorFindingUser))
+		collectionMock.On("Find", context.Background(), query).Return(&mongo.Cursor{}, errors.New(constant.ErrorFindingUser))
 
 		// Act
 		result, err := dbRepo.FindUserByFirstLastName(user.FirstName, user.LastName)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query, []*options.FindOptions(nil)))
+		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
 		assert.EqualError(t, err, constant.ErrorFindingUser)
 		assert.Equal(t, model.User{}, result)
 	})
