@@ -33,13 +33,13 @@ func TestDbRepository_GetUserByID(t *testing.T) {
 		}
 
 		query := bson.M{"_id": bson.M{"$eq": user.ID}}
-		collectionMock.On("FindOne", context.TODO(), query).Return(mongo.NewSingleResultFromDocument(&user, nil, nil))
+		collectionMock.On("FindOne", context.Background(), query).Return(mongo.NewSingleResultFromDocument(&user, nil, nil))
 
 		// Act
 		result, _ := dbRepo.GetUserById(user.ID)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.TODO(), query))
+		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.Background(), query))
 		assert.Equal(t, user.ID, result.ID)
 		assert.Equal(t, user.FirstName, result.FirstName)
 		assert.Equal(t, user.LastName, result.LastName)
@@ -62,12 +62,12 @@ func TestDbRepository_GetUserByID(t *testing.T) {
 		}
 
 		query := bson.M{"_id": bson.M{"$eq": user.ID}}
-		collectionMock.On("FindOne", context.TODO(), query).Return(mongo.NewSingleResultFromDocument(&mongo.SingleResult{}, mongo.ErrNoDocuments, nil))
+		collectionMock.On("FindOne", context.Background(), query).Return(mongo.NewSingleResultFromDocument(&mongo.SingleResult{}, mongo.ErrNoDocuments, nil))
 		// Act
 		result, err := dbRepo.GetUserById(user.ID)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.TODO(), query))
+		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.Background(), query))
 		assert.EqualError(t, err, constant.ErrorUserNotFound)
 		assert.Nil(t, result)
 	})
@@ -86,13 +86,13 @@ func TestDbRepository_GetUserByID(t *testing.T) {
 		}
 
 		query := bson.M{"_id": bson.M{"$eq": user.ID}}
-		collectionMock.On("FindOne", context.TODO(), query).Return(mongo.NewSingleResultFromDocument(nil, nil, nil))
+		collectionMock.On("FindOne", context.Background(), query).Return(mongo.NewSingleResultFromDocument(nil, nil, nil))
 
 		// Act
 		result, err := dbRepo.GetUserById(user.ID)
 
 		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.TODO(), query))
+		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.Background(), query))
 		assert.EqualError(t, err, constant.ErrorGettingUser)
 		assert.Nil(t, result)
 	})
@@ -113,14 +113,14 @@ func TestDbRepository_CreateUser(t *testing.T) {
 
 		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
 		collectionMock.On("Find", context.Background(), query).Return(mongo.NewCursorFromDocuments(nil, nil, nil))
-		collectionMock.On("InsertOne", context.TODO(), &user).Return(&mongo.InsertOneResult{}, nil, nil)
+		collectionMock.On("InsertOne", context.Background(), &user).Return(&mongo.InsertOneResult{}, nil, nil)
 
 		// Act
 		result, err := dbRepo.CreateUser(&user)
 
 		// Assert
 		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
-		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.TODO(), &user))
+		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.Background(), &user))
 		assert.Nil(t, err)
 		assert.Equal(t, user.FirstName, result.FirstName)
 		assert.Equal(t, user.LastName, result.LastName)
@@ -142,14 +142,14 @@ func TestDbRepository_CreateUser(t *testing.T) {
 
 		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
 		collectionMock.On("Find", context.Background(), query).Return(mongo.NewCursorFromDocuments(nil, nil, nil))
-		collectionMock.On("InsertOne", context.TODO(), &user).Return(&mongo.InsertOneResult{}, errors.New(constant.ErrorCreatingUser), nil)
+		collectionMock.On("InsertOne", context.Background(), &user).Return(&mongo.InsertOneResult{}, errors.New(constant.ErrorCreatingUser), nil)
 
 		// Act
 		result, err := dbRepo.CreateUser(&user)
 
 		// Assert
 		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
-		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.TODO(), &user))
+		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.Background(), &user))
 		assert.EqualError(t, err, constant.ErrorCreatingUser)
 		assert.Nil(t, result)
 	})

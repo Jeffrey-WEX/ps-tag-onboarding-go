@@ -32,7 +32,7 @@ func NewRepository(database *mongo.Database) *DbRepository {
 func (repo DbRepository) GetUserById(id string) (*model.User, error) {
 	var user model.User
 	query := bson.M{"_id": bson.M{"$eq": id}}
-	err := repo.collection.FindOne(context.TODO(), query).Decode(&user)
+	err := repo.collection.FindOne(context.Background(), query).Decode(&user)
 
 	if err == mongo.ErrNoDocuments {
 		log.Println("User not found: ", err)
@@ -58,7 +58,7 @@ func (repo DbRepository) CreateUser(newUser *model.User) (*model.User, error) {
 	}
 
 	newUser.ID = uuid.New().String()
-	_, err = repo.collection.InsertOne(context.TODO(), newUser)
+	_, err = repo.collection.InsertOne(context.Background(), newUser)
 
 	if err != nil {
 		return nil, errors.New(constant.ErrorCreatingUser)
