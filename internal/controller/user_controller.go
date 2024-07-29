@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"log"
 	"net/http"
 	"sync"
 
@@ -36,6 +37,7 @@ func (controller UserController) GetUserById(context *gin.Context) {
 	user, errorMessage := controller.userService.GetUserById(id)
 
 	if errorMessage != nil {
+		log.Println("Failed to get user, error: ", errorMessage.ErrorMessage)
 		context.IndentedJSON(errorMessage.ErrorStatusCode, gin.H{"status_code": errorMessage.ErrorStatusCode, "message": errorMessage.ErrorMessage})
 		return
 	}
@@ -47,7 +49,7 @@ func (controller UserController) CreateUser(context *gin.Context) {
 	var user model.User
 
 	if err := context.BindJSON(&user); err != nil {
-
+		log.Println("Failed to bind JSON, error: ", err)
 		context.IndentedJSON(http.StatusBadRequest, gin.H{"status_code": http.StatusBadRequest, "message": constant.ErrorInvalidUserObject})
 		return
 	}
@@ -55,6 +57,7 @@ func (controller UserController) CreateUser(context *gin.Context) {
 	newUser, errorMessage := controller.userService.CreateUser(&user)
 
 	if errorMessage != nil {
+		log.Println("Failed to create user, error: ", errorMessage.ErrorMessage)
 		context.IndentedJSON(errorMessage.ErrorStatusCode, gin.H{"status_code": errorMessage.ErrorStatusCode, "message": errorMessage.ErrorMessage})
 		return
 	} else {

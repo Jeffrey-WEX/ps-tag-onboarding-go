@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -38,10 +39,12 @@ func (service UserService) GetUserById(userId string) (*model.User, *errormessag
 
 	if err != nil {
 		if err.Error() == constant.ErrorUserNotFound {
+			log.Println("Failed to get user, error: ", err)
 			errorMessage := errormessage.NewErrorMessage(constant.ErrorUserNotFound, http.StatusNotFound)
 			return nil, &errorMessage
 		}
 
+		log.Println("Failed to get user, error: ", err)
 		errorMessage := errormessage.NewErrorMessage(constant.ErrorGettingUser, http.StatusInternalServerError)
 		return nil, &errorMessage
 	}
@@ -52,6 +55,7 @@ func (service UserService) GetUserById(userId string) (*model.User, *errormessag
 func (service UserService) CreateUser(user *model.User) (*model.User, *errormessage.ErrorMessage) {
 	var errors []string = service.userValidation.ValidateUser(user)
 	if len(errors) > 0 {
+		log.Printf("Validation failed for user creation: %v", strings.Join(errors, ", "))
 		errorMessage := errormessage.NewErrorMessage(strings.Join(errors, ", "), http.StatusBadRequest)
 		return nil, &errorMessage
 	}
@@ -59,9 +63,12 @@ func (service UserService) CreateUser(user *model.User) (*model.User, *errormess
 	newUser, err := service.dbRepository.CreateUser(user)
 	if err != nil {
 		if err.Error() == constant.ErrorNameAlreadyExists {
+			log.Println("Failed to create user, error: ", err)
 			errorMessage := errormessage.NewErrorMessage(constant.ErrorNameAlreadyExists, http.StatusBadRequest)
 			return nil, &errorMessage
 		}
+
+		log.Println("Failed to create user, error: ", err)
 		errorMessage := errormessage.NewErrorMessage(err.Error(), http.StatusInternalServerError)
 		return nil, &errorMessage
 	}
