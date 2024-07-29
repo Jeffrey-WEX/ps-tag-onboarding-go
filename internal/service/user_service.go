@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/errormessage"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var (
@@ -38,7 +40,7 @@ func (service UserService) GetUserById(userId string) (*model.User, *errormessag
 	user, err := service.dbRepository.GetUserById(userId)
 
 	if err != nil {
-		if err.Error() == constant.ErrorUserNotFound {
+		if err.Error() == fmt.Errorf("%s: %v", constant.ErrorUserNotFound, mongo.ErrNoDocuments).Error() {
 			log.Println("Failed to get user, error: ", err)
 			errorMessage := errormessage.NewErrorMessage(constant.ErrorUserNotFound, http.StatusNotFound)
 			return nil, &errorMessage
