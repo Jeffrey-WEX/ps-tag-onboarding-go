@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
@@ -36,12 +37,12 @@ func (repo DbRepository) GetUserById(id string) (*model.User, error) {
 
 	if err == mongo.ErrNoDocuments {
 		log.Println("User not found: ", err)
-		return nil, errors.New(constant.ErrorUserNotFound)
+		return nil, fmt.Errorf("%s: %v", constant.ErrorUserNotFound, err)
 	}
 
 	if err != nil {
 		log.Println("Error getting user: ", err)
-		return nil, errors.New(constant.ErrorGettingUser)
+		return nil, fmt.Errorf("%s: %v", constant.ErrorGettingUser, err)
 	}
 
 	return &user, nil
@@ -61,7 +62,7 @@ func (repo DbRepository) CreateUser(newUser *model.User) (*model.User, error) {
 	_, err = repo.collection.InsertOne(context.Background(), newUser)
 
 	if err != nil {
-		return nil, errors.New(constant.ErrorCreatingUser)
+		return nil, fmt.Errorf("%s: %v", constant.ErrorCreatingUser, err)
 	}
 
 	return newUser, nil
@@ -74,7 +75,7 @@ func (repo DbRepository) FindUserByFirstLastName(firstName string, lastName stri
 
 	if err != nil {
 		log.Println("Error finding user: ", err)
-		return model.User{}, errors.New(constant.ErrorFindingUser)
+		return model.User{}, fmt.Errorf("%s: %v", constant.ErrorFindingUser, err)
 	}
 
 	users, err := retrieveUsersFromCursor(cursor)
@@ -97,7 +98,7 @@ func retrieveUsersFromCursor(cursor *mongo.Cursor) ([]model.User, error) {
 
 		if err != nil {
 			log.Println("Error decoding user: ", err)
-			return nil, errors.New(constant.ErrorDecodingUser)
+			return nil, fmt.Errorf("%s: %v", constant.ErrorDecodingUser, err)
 		}
 
 		users = append(users, user)
@@ -105,7 +106,7 @@ func retrieveUsersFromCursor(cursor *mongo.Cursor) ([]model.User, error) {
 
 	if err := cursor.Err(); err != nil {
 		log.Println("Error retrieving users: ", err)
-		return nil, errors.New(constant.ErrorRetrievingUsers)
+		return nil, fmt.Errorf("%s: %v", constant.ErrorRetrievingUsers, err)
 	}
 
 	return users, nil
