@@ -10,10 +10,10 @@ type IRoutes interface {
 }
 
 type Routes struct {
-	controller controller.IController
+	controller controller.IUserController
 }
 
-func NewRoutes(controller controller.IController) Routes {
+func NewRoutes(controller controller.IUserController) Routes {
 	return Routes{controller}
 }
 

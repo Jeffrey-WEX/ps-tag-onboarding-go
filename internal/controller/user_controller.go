@@ -15,20 +15,25 @@ var (
 	controller *UserController
 )
 
-type UserController struct {
-	service service.IService
+type IUserController interface {
+	GetUserById(context *gin.Context)
+	CreateUser(context *gin.Context)
 }
 
-func NewController(service service.IService) *UserController {
+type UserController struct {
+	userService service.IUserService
+}
+
+func NewController(userService service.IUserService) *UserController {
 	once.Do(func() {
-		controller = &UserController{service}
+		controller = &UserController{userService}
 	})
 	return controller
 }
 
 func (controller UserController) GetUserById(context *gin.Context) {
 	id := context.Param("id")
-	user, errorMessage := controller.service.GetUserById(id)
+	user, errorMessage := controller.userService.GetUserById(id)
 
 	if errorMessage != nil {
 		context.IndentedJSON(errorMessage.ErrorStatusCode, gin.H{"status_code": errorMessage.ErrorStatusCode, "message": errorMessage.ErrorMessage})
@@ -47,7 +52,7 @@ func (controller UserController) CreateUser(context *gin.Context) {
 		return
 	}
 
-	newUser, errorMessage := controller.service.CreateUser(&user)
+	newUser, errorMessage := controller.userService.CreateUser(&user)
 
 	if errorMessage != nil {
 		context.IndentedJSON(errorMessage.ErrorStatusCode, gin.H{"status_code": errorMessage.ErrorStatusCode, "message": errorMessage.ErrorMessage})

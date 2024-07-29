@@ -35,7 +35,7 @@ func cleanUpDb(db *mongo.Database) {
 	}
 }
 
-func setUpAppAndDb() (*gin.Engine, *mongo.Database, repository.IUserRepository) {
+func setUpAppAndDb() (*gin.Engine, *mongo.Database, repository.IDbRepository) {
 	err := godotenv.Load("../../variables.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file")

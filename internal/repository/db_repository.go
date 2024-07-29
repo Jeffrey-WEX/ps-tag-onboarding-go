@@ -15,6 +15,12 @@ import (
 
 const UserCollection = "user"
 
+type IDbRepository interface {
+	GetUserById(userId string) (*model.User, error)
+	CreateUser(newUser *model.User) (*model.User, error)
+	FindUserByFirstLastName(firstName string, lastName string) (model.User, error)
+}
+
 type DbRepository struct {
 	collection database.IMongoCollection
 }

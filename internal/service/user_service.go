@@ -16,20 +16,25 @@ var (
 	service *UserService
 )
 
+type IUserService interface {
+	GetUserById(userId string) (*model.User, *errormessage.ErrorMessage)
+	CreateUser(newUser *model.User) (*model.User, *errormessage.ErrorMessage)
+}
+
 type UserService struct {
-	userRepository repository.IUserRepository
+	dbRepository   repository.IDbRepository
 	userValidation UserValidationService
 }
 
-func NewService(userRepository repository.IUserRepository, userValidation UserValidationService) *UserService {
+func NewService(dbRepository repository.IDbRepository, userValidation UserValidationService) *UserService {
 	once.Do(func() {
-		service = &UserService{userRepository, userValidation}
+		service = &UserService{dbRepository, userValidation}
 	})
 	return service
 }
 
 func (service UserService) GetUserById(userId string) (*model.User, *errormessage.ErrorMessage) {
-	user, err := service.userRepository.GetUserById(userId)
+	user, err := service.dbRepository.GetUserById(userId)
 
 	if err != nil {
 		if err.Error() == constant.ErrorUserNotFound {
@@ -51,7 +56,7 @@ func (service UserService) CreateUser(user *model.User) (*model.User, *errormess
 		return nil, &errorMessage
 	}
 
-	newUser, err := service.userRepository.CreateUser(user)
+	newUser, err := service.dbRepository.CreateUser(user)
 	if err != nil {
 		if err.Error() == constant.ErrorNameAlreadyExists {
 			errorMessage := errormessage.NewErrorMessage(constant.ErrorNameAlreadyExists, http.StatusBadRequest)
