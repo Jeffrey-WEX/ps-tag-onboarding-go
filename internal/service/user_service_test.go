@@ -3,13 +3,16 @@ package service
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 	"testing"
 
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/constant"
+	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/errormessage"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/model"
 	"github.com/Jeffrey-WEX/ps-tag-onboarding-go/internal/repository/mocks"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func setUpRepoAndService() (*UserService, *mocks.IDbRepository) {
@@ -21,141 +24,172 @@ func setUpRepoAndService() (*UserService, *mocks.IDbRepository) {
 }
 
 func TestGetUserById(t *testing.T) {
-	t.Run("Get user sucessfully", func(t *testing.T) {
-		// Arrange
-		userService, dbRepo := setUpRepoAndService()
-		user := &model.User{
-			ID:        "1",
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@test.com",
-			Age:       25,
-		}
+	user := model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@test.com",
+		Age:       25,
+	}
 
-		dbRepo.On("GetUserById", "1").Return(user, nil)
+	userNotFoundErrorMessage := errormessage.ErrorMessage{
+		ErrorMessage:    constant.ErrorUserNotFound,
+		ErrorStatusCode: http.StatusNotFound,
+	}
 
-		// Act
-		result, _ := userService.GetUserById(user.ID)
+	errorGettingUserErrorMessage := errormessage.ErrorMessage{
+		ErrorMessage:    constant.ErrorGettingUser,
+		ErrorStatusCode: http.StatusInternalServerError,
+	}
 
-		// Assert
-		dbRepo.AssertCalled(t, "GetUserById", user.ID)
-		assert.Equal(t, user, result)
-	})
+	testCases := []struct {
+		name            string
+		userID          string
+		mockReturnUser  *model.User
+		mockReturnError error
+		expectedUser    *model.User
+		expectedError   *errormessage.ErrorMessage
+	}{
+		{
+			name:            "Get user successfully",
+			userID:          "1",
+			mockReturnUser:  &user,
+			mockReturnError: nil,
+			expectedUser:    &user,
+			expectedError:   nil,
+		},
+		{
+			name:            "Get user return error when user not found",
+			userID:          "1",
+			mockReturnUser:  nil,
+			mockReturnError: fmt.Errorf("%s: %v", constant.ErrorUserNotFound, mongo.ErrNoDocuments),
+			expectedUser:    nil,
+			expectedError:   &userNotFoundErrorMessage,
+		},
+		{
+			name:            "Get user return error when database returns error",
+			userID:          "1",
+			mockReturnUser:  nil,
+			mockReturnError: errors.New(constant.ErrorGettingUser),
+			expectedUser:    nil,
+			expectedError:   &errorGettingUserErrorMessage,
+		},
+	}
 
-	t.Run("Get user return error when user not found", func(t *testing.T) {
-		// Arrange
-		userService, dbRepo := setUpRepoAndService()
-		dbRepo.On("GetUserById", "1").Return(nil, errors.New(constant.ErrorUserNotFound))
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			userService, dbRepo := setUpRepoAndService()
+			dbRepo.On("GetUserById", tc.userID).Return(tc.mockReturnUser, tc.mockReturnError)
 
-		// Act
-		result, err := userService.GetUserById("1")
+			// Act
+			result, err := userService.GetUserById(tc.userID)
 
-		// Assert
-		dbRepo.AssertCalled(t, "GetUserById", "1")
-		assert.Nil(t, result)
-		assert.NotNil(t, err)
-		assert.Equal(t, constant.ErrorUserNotFound, err.ErrorMessage)
-	})
-
-	t.Run("Get user return error when database returns error", func(t *testing.T) {
-		// Arrange
-		userService, dbRepo := setUpRepoAndService()
-		dbRepo.On("GetUserById", "1").Return(nil, errors.New(constant.ErrorGettingUser))
-
-		// Act
-		result, err := userService.GetUserById("1")
-
-		// Assert
-		dbRepo.AssertCalled(t, "GetUserById", "1")
-		assert.Nil(t, result)
-		assert.NotNil(t, err)
-		assert.Equal(t, constant.ErrorGettingUser, err.ErrorMessage)
-	})
+			// Assert
+			dbRepo.AssertCalled(t, "GetUserById", tc.userID)
+			assert.Equal(t, tc.expectedUser, result)
+			assert.Equal(t, tc.expectedError, err)
+		})
+	}
 }
 
 func TestCreateUser(t *testing.T) {
-	t.Run("Create user successfully", func(t *testing.T) {
-		// Arrange
-		userService, dbRepo := setUpRepoAndService()
-		user := &model.User{
-			ID:        "1",
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@test.com",
-			Age:       25,
-		}
+	validUser := model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@test.com",
+		Age:       25,
+	}
 
-		dbRepo.On("CreateUser", user).Return(user, nil)
+	invalidUser := model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoetest.com",
+		Age:       16,
+	}
 
-		// Act
-		newUser, errorMessage := userService.CreateUser(user)
+	// Test Create user successfully
+	mockCreateUserFuncReturnUser := func(repo *mocks.IDbRepository) {
+		repo.On("CreateUser", &validUser).Return(&validUser, nil)
+	}
 
-		// Assert
-		dbRepo.AssertCalled(t, "CreateUser", user)
-		assert.Equal(t, user, newUser)
-		assert.Empty(t, errorMessage)
-	})
+	// Test Create invalid user returns error
+	invalidUserError := fmt.Sprintf("%s, %s", constant.ErrorAgeMinimum, constant.ErrorEmailInvalidFormat)
+	invalidUserErrorMessage := errormessage.ErrorMessage{
+		ErrorMessage:    invalidUserError,
+		ErrorStatusCode: http.StatusBadRequest,
+	}
+	mockEmptyCreateUserFunc := func(repo *mocks.IDbRepository) {}
 
-	t.Run("Create invalid user returns error", func(t *testing.T) {
-		// Arrange
-		userService, _ := setUpRepoAndService()
-		user := &model.User{
-			ID:        "1",
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoetest.com",
-			Age:       16,
-		}
+	// Test Create existing user returns error
+	nameAlreadyExistsErrorMesage := errormessage.ErrorMessage{
+		ErrorMessage:    constant.ErrorNameAlreadyExists,
+		ErrorStatusCode: http.StatusBadRequest,
+	}
+	mockCreateUserFuncReturnNameAlreadyExistsError := func(repo *mocks.IDbRepository) {
+		repo.On("CreateUser", &validUser).Return(nil, errors.New(constant.ErrorNameAlreadyExists))
+	}
 
-		// Act
-		newUser, errorMessage := userService.CreateUser(user)
+	// Test Create user returns error when database returns error
+	internalServerErrorMessage := errormessage.ErrorMessage{
+		ErrorMessage:    constant.ErrorCreatingUser,
+		ErrorStatusCode: http.StatusInternalServerError,
+	}
+	mockCreateUserFuncReturnDatabaseError := func(repo *mocks.IDbRepository) {
+		repo.On("CreateUser", &validUser).Return(nil, errors.New(constant.ErrorCreatingUser))
+	}
 
-		// Assert
-		assert.Nil(t, newUser)
-		assert.Equal(t, fmt.Sprintf("%s, %s", constant.ErrorAgeMinimum, constant.ErrorEmailInvalidFormat), errorMessage.ErrorMessage)
-	})
+	testCases := []struct {
+		name                 string
+		inputUser            *model.User
+		mockCreateUserFunc   func(*mocks.IDbRepository)
+		expectedUser         *model.User
+		expectedErrorMessage *errormessage.ErrorMessage
+	}{
+		{
+			name:                 "Create user successfully",
+			inputUser:            &validUser,
+			mockCreateUserFunc:   mockCreateUserFuncReturnUser,
+			expectedUser:         &validUser,
+			expectedErrorMessage: nil,
+		},
+		{
+			name:                 "Create invalid user returns error",
+			inputUser:            &invalidUser,
+			mockCreateUserFunc:   mockEmptyCreateUserFunc,
+			expectedUser:         nil,
+			expectedErrorMessage: &invalidUserErrorMessage,
+		},
+		{
+			name:                 "Create existing user returns error",
+			inputUser:            &validUser,
+			mockCreateUserFunc:   mockCreateUserFuncReturnNameAlreadyExistsError,
+			expectedUser:         nil,
+			expectedErrorMessage: &nameAlreadyExistsErrorMesage,
+		},
+		{
+			name:                 "Create user returns error when database returns error",
+			inputUser:            &validUser,
+			mockCreateUserFunc:   mockCreateUserFuncReturnDatabaseError,
+			expectedUser:         nil,
+			expectedErrorMessage: &internalServerErrorMessage,
+		},
+	}
 
-	t.Run("Create existing user returns error", func(t *testing.T) {
-		// Arrange
-		userService, dbRepo := setUpRepoAndService()
-		user := &model.User{
-			ID:        "1",
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@test.com",
-			Age:       24,
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			userService, dbRepo := setUpRepoAndService()
+			tc.mockCreateUserFunc(dbRepo)
 
-		dbRepo.On("CreateUser", user).Return(nil, errors.New(constant.ErrorNameAlreadyExists))
+			// Act
+			newUser, errorMessage := userService.CreateUser(tc.inputUser)
 
-		// Act
-		newUser, errorMessage := userService.CreateUser(user)
-
-		// Assert
-		dbRepo.AssertCalled(t, "CreateUser", user)
-		assert.Nil(t, newUser)
-		assert.Equal(t, constant.ErrorNameAlreadyExists, errorMessage.ErrorMessage)
-	})
-
-	t.Run("Create user returns error when database returns error", func(t *testing.T) {
-		// Arrange
-		userService, dbRepo := setUpRepoAndService()
-		user := &model.User{
-			ID:        "1",
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@test.com",
-			Age:       24,
-		}
-
-		dbRepo.On("CreateUser", user).Return(nil, errors.New(constant.ErrorCreatingUser))
-
-		// Act
-		newUser, errorMessage := userService.CreateUser(user)
-
-		// Assert
-		dbRepo.AssertCalled(t, "CreateUser", user)
-		assert.Nil(t, newUser)
-		assert.Equal(t, constant.ErrorCreatingUser, errorMessage.ErrorMessage)
-	})
+			// Assert
+			assert.Equal(t, tc.expectedUser, newUser)
+			assert.Equal(t, tc.expectedErrorMessage, errorMessage)
+		})
+	}
 }

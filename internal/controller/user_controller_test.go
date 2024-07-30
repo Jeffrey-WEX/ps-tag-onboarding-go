@@ -30,172 +30,153 @@ func getGinContext(w *httptest.ResponseRecorder) *gin.Context {
 	return ctx
 }
 
-func TestControllerGetUserById(t *testing.T) {
+func TestController_GetUserById(t *testing.T) {
+	user := model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@test.com",
+		Age:       25,
+	}
 
-	t.Run("Get user sucessfully", func(t *testing.T) {
-		// Arrange
-		userServiceMock := new(mocks.IUserService)
-		userController := NewController(userServiceMock)
-		w := httptest.NewRecorder()
-		ctx := getGinContext(w)
+	errorMessage := errormessage.ErrorMessage{
+		ErrorStatusCode: http.StatusBadRequest,
+		ErrorMessage:    constant.ErrorAgeMinimum,
+	}
 
-		user := model.User{
-			ID:        "1",
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@test.com",
-			Age:       25,
-		}
+	testCases := []struct {
+		name                   string
+		userID                 string
+		mockReturnUser         *model.User
+		mockReturnError        *errormessage.ErrorMessage
+		expectedStatusCodeCode int
+		expectedResponseBody   interface{}
+	}{
+		{
+			name:                   "Get user successfully",
+			userID:                 "1",
+			mockReturnUser:         &user,
+			mockReturnError:        nil,
+			expectedStatusCodeCode: http.StatusOK,
+			expectedResponseBody:   user,
+		},
+		{
+			name:                   "Get user failed with error message returned",
+			userID:                 "1",
+			mockReturnUser:         nil,
+			mockReturnError:        &errorMessage,
+			expectedStatusCodeCode: http.StatusBadRequest,
+			expectedResponseBody:   errorMessage,
+		},
+	}
 
-		userServiceMock.On("GetUserById", "1").Return(&user, nil)
-		ctx.Request.Method = "GET"
-		ctx.Request.Header.Set("Content-Type", "application/json")
-		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			userServiceMock := new(mocks.IUserService)
+			userController := NewController(userServiceMock)
+			w := httptest.NewRecorder()
+			ctx := getGinContext(w)
 
-		// Act
-		userController.GetUserById(ctx)
+			userServiceMock.On("GetUserById", tc.userID).Return(tc.mockReturnUser, tc.mockReturnError)
+			ctx.Request.Method = "GET"
+			ctx.Request.Header.Set("Content-Type", "application/json")
+			ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: tc.userID})
 
-		// Assert
-		assert.True(t, userServiceMock.AssertCalled(t, "GetUserById", "1"))
-		assert.Equal(t, http.StatusOK, w.Code)
+			// Act
+			userController.GetUserById(ctx)
 
-		expectedBody, err := json.MarshalIndent(user, "", "    ")
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
-		assert.Equal(t, string(expectedBody), w.Body.String())
-	})
+			// Assert
+			assert.True(t, userServiceMock.AssertCalled(t, "GetUserById", tc.userID))
+			assert.Equal(t, tc.expectedStatusCodeCode, w.Code)
 
-	t.Run("Get user failed with error message returned", func(t *testing.T) {
-		// Arrange
-		userServiceMock := new(mocks.IUserService)
-		userController := NewController(userServiceMock)
-		w := httptest.NewRecorder()
-		ctx := getGinContext(w)
-
-		errorMessage := errormessage.ErrorMessage{
-			ErrorStatusCode: http.StatusBadRequest,
-			ErrorMessage:    constant.ErrorAgeMinimum,
-		}
-
-		userServiceMock.On("GetUserById", "1").Return(nil, &errorMessage)
-		ctx.Request.Method = "GET"
-		ctx.Request.Header.Set("Content-Type", "application/json")
-		ctx.Params = append(ctx.Params, gin.Param{Key: "id", Value: "1"})
-
-		// Act
-		userController.GetUserById(ctx)
-
-		// Assert
-		assert.True(t, userServiceMock.AssertCalled(t, "GetUserById", "1"))
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		expectedBody, err := json.MarshalIndent(errorMessage, "", "    ")
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
-		assert.Equal(t, string(expectedBody), w.Body.String())
-	})
-
+			expectedBody, _ := json.MarshalIndent(tc.expectedResponseBody, "", "    ")
+			assert.Equal(t, string(expectedBody), w.Body.String())
+		})
+	}
 }
 
-func TestUserControllerCreateUser(t *testing.T) {
+func TestUserController_CreateUser(t *testing.T) {
+	user := model.User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@test.com",
+		Age:       25,
+	}
 
-	t.Run("Create user successfully", func(t *testing.T) {
-		// Arrange
-		userServiceMock := new(mocks.IUserService)
-		userController := NewController(userServiceMock)
-		w := httptest.NewRecorder()
-		ctx := getGinContext(w)
+	// Test create user succesfully
+	mockCreateUserFuncReturnUser := func(mock *mocks.IUserService) {
+		mock.On("CreateUser", &user).Return(&user, nil)
+	}
 
-		user := model.User{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@test.com",
-			Age:       25,
-		}
+	// Test create user failed with bad JSON
+	badJSONBody := gin.H{
+		"status_code": http.StatusBadRequest,
+		"message":     constant.ErrorInvalidUserObject,
+	}
+	mockEmptyCreateUserFunc := func(mock *mocks.IUserService) {}
 
-		userServiceMock.On("CreateUser", &user).Return(&user, nil)
-		ctx.Request.Method = "POST"
-		ctx.Request.Header.Set("Content-Type", "application/json")
-		body, err := json.Marshal(user)
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
+	// Test create user failed with error message returned
+	badRequestErrorMessage := errormessage.ErrorMessage{
+		ErrorStatusCode: http.StatusBadRequest,
+		ErrorMessage:    constant.ErrorEmailInvalidFormat,
+	}
+	mockCreateUserFuncReturnError := func(mock *mocks.IUserService) {
+		mock.On("CreateUser", &model.User{}).Return(nil, &badRequestErrorMessage)
+	}
 
-		ctx.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+	testCases := []struct {
+		name               string
+		mockCreateUserFunc func(*mocks.IUserService)
+		inputBody          interface{}
+		expectedStatusCode int
+		expectedBody       interface{}
+	}{
+		{
+			name:               "Create user successfully",
+			mockCreateUserFunc: mockCreateUserFuncReturnUser,
+			inputBody:          user,
+			expectedStatusCode: http.StatusCreated,
+			expectedBody:       user,
+		},
+		{
+			name:               "Create user failed with bad JSON",
+			mockCreateUserFunc: mockEmptyCreateUserFunc,
+			inputBody:          "",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       badJSONBody,
+		},
+		{
+			name:               "Create user failed with error message returned",
+			mockCreateUserFunc: mockCreateUserFuncReturnError,
+			inputBody:          model.User{},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       badRequestErrorMessage,
+		},
+	}
 
-		// Act
-		userController.CreateUser(ctx)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			userServiceMock := new(mocks.IUserService)
+			tc.mockCreateUserFunc(userServiceMock)
+			userController := NewController(userServiceMock)
+			w := httptest.NewRecorder()
+			ctx := getGinContext(w)
 
-		// Assert
-		assert.True(t, userServiceMock.AssertCalled(t, "CreateUser", &user))
-		assert.Equal(t, http.StatusCreated, w.Code)
+			ctx.Request.Method = "POST"
+			ctx.Request.Header.Set("Content-Type", "application/json")
+			body, _ := json.Marshal(tc.inputBody)
+			ctx.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 
-		expectedBody, err := json.MarshalIndent(user, "", "    ")
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
-		assert.Equal(t, string(expectedBody), w.Body.String())
-	})
+			// Act
+			userController.CreateUser(ctx)
 
-	t.Run("Create user failed with bad JSON", func(t *testing.T) {
-		// Arrange
-		userServiceMock := new(mocks.IUserService)
-		userController := NewController(userServiceMock)
-		w := httptest.NewRecorder()
-		ctx := getGinContext(w)
+			// Assert
+			assert.Equal(t, tc.expectedStatusCode, w.Code)
 
-		ctx.Request.Method = "POST"
-		ctx.Request.Header.Set("Content-Type", "application/json")
-		ctx.Request.Body = io.NopCloser(bytes.NewBufferString(""))
-
-		// Act
-		userController.CreateUser(ctx)
-
-		// Assert
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-
-		expectedBody, err := json.MarshalIndent(gin.H{"status_code": http.StatusBadRequest, "message": constant.ErrorInvalidUserObject}, "", "    ")
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
-		assert.Equal(t, string(expectedBody), w.Body.String())
-	})
-
-	t.Run("Create user failed with error message returned", func(t *testing.T) {
-		// Arrange
-		userServiceMock := new(mocks.IUserService)
-		userController := NewController(userServiceMock)
-		w := httptest.NewRecorder()
-		ctx := getGinContext(w)
-
-		errorMessage := errormessage.ErrorMessage{
-			ErrorStatusCode: http.StatusBadRequest,
-			ErrorMessage:    constant.ErrorEmailInvalidFormat,
-		}
-
-		userServiceMock.On("CreateUser", &model.User{}).Return(nil, &errorMessage)
-		ctx.Request.Method = "POST"
-		ctx.Request.Header.Set("Content-Type", "application/json")
-		body, err := json.Marshal(model.User{})
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
-
-		ctx.Request.Body = io.NopCloser(bytes.NewBuffer(body))
-
-		// Act
-		userController.CreateUser(ctx)
-
-		// Assert
-		assert.True(t, userServiceMock.AssertCalled(t, "CreateUser", &model.User{}))
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-
-		expectedBody, err := json.MarshalIndent(errorMessage, "", "    ")
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
-		assert.Equal(t, string(expectedBody), w.Body.String())
-
-	})
+			expectedBody, _ := json.MarshalIndent(tc.expectedBody, "", "    ")
+			assert.Equal(t, string(expectedBody), w.Body.String())
+		})
+	}
 }

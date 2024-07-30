@@ -17,197 +17,212 @@ func setupDatabase() *mocks.IMongoCollection {
 	return new(mocks.IMongoCollection)
 }
 
-func TestDbRepository_GetUserByID(t *testing.T) {
-	t.Run("Get user successfully", func(t *testing.T) {
+func TestDbRepository_GetUserById(t *testing.T) {
+	user := model.User{
+		ID:        "1",
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@gmail.com",
+		Age:       24,
+	}
 
-		// Arrange
-		collectionMock := setupDatabase()
-		dbRepo := DbRepository{collection: collectionMock}
-
-		user := model.User{
-			ID:        "1",
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@gmail.com",
-			Age:       24,
-		}
-
+	// Test Get user successfully
+	mockFindOneFuncReturnUser := func(collectionMock *mocks.IMongoCollection) {
 		query := bson.M{"_id": bson.M{"$eq": user.ID}}
-		collectionMock.On("FindOne", context.Background(), query).Return(mongo.NewSingleResultFromDocument(&user, nil, nil))
+		collectionMock.On("FindOne", context.Background(), query).Return(mongo.NewSingleResultFromDocument(user, nil, nil))
+	}
 
-		// Act
-		result, _ := dbRepo.GetUserById(user.ID)
-
-		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.Background(), query))
-		assert.Equal(t, user.ID, result.ID)
-		assert.Equal(t, user.FirstName, result.FirstName)
-		assert.Equal(t, user.LastName, result.LastName)
-		assert.Equal(t, user.Email, result.Email)
-		assert.Equal(t, user.Age, result.Age)
-
-	})
-
-	t.Run("Get non-existing user", func(t *testing.T) {
-		// Arrange
-		collectionMock := setupDatabase()
-		dbRepo := DbRepository{collection: collectionMock}
-
-		user := model.User{
-			ID:        "1",
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@gmail.com",
-			Age:       24,
-		}
-
+	// Test Get non-existing user
+	mockFindOneFuncReturnEmpty := func(collectionMock *mocks.IMongoCollection) {
 		query := bson.M{"_id": bson.M{"$eq": user.ID}}
 		collectionMock.On("FindOne", context.Background(), query).Return(mongo.NewSingleResultFromDocument(&mongo.SingleResult{}, mongo.ErrNoDocuments, nil))
-		expectedError := fmt.Errorf("%s: %v", constant.ErrorUserNotFound, mongo.ErrNoDocuments)
-		// Act
-		result, err := dbRepo.GetUserById(user.ID)
+	}
 
-		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.Background(), query))
-		assert.EqualError(t, err, expectedError.Error())
-		assert.Nil(t, result)
-	})
-
-	t.Run("Get user failed with error", func(t *testing.T) {
-		// Arrange
-		collectionMock := setupDatabase()
-		dbRepo := DbRepository{collection: collectionMock}
-
-		user := model.User{
-			ID:        "1",
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@gmail.com",
-			Age:       24,
-		}
-
+	// Test Get user failed with error
+	mockFindOneFuncReturnError := func(collectionMock *mocks.IMongoCollection) {
 		query := bson.M{"_id": bson.M{"$eq": user.ID}}
 		collectionMock.On("FindOne", context.Background(), query).Return(mongo.NewSingleResultFromDocument(nil, nil, nil))
-		expectedError := fmt.Errorf("%s: %v", constant.ErrorGettingUser, mongo.ErrNilDocument)
+	}
 
-		// Act
-		result, err := dbRepo.GetUserById(user.ID)
+	testCases := []struct {
+		name            string
+		userID          string
+		mockFindOneFunc func(*mocks.IMongoCollection)
+		expectedUser    *model.User
+		expectedError   error
+	}{
+		{
+			name:            "Get user successfully",
+			userID:          user.ID,
+			mockFindOneFunc: mockFindOneFuncReturnUser,
+			expectedUser:    &user,
+			expectedError:   nil,
+		},
+		{
+			name:            "Get non-existing user",
+			userID:          user.ID,
+			mockFindOneFunc: mockFindOneFuncReturnEmpty,
+			expectedUser:    nil,
+			expectedError:   fmt.Errorf("%s: %v", constant.ErrorUserNotFound, mongo.ErrNoDocuments),
+		},
+		{
+			name:            "Get user failed with error",
+			userID:          user.ID,
+			mockFindOneFunc: mockFindOneFuncReturnError,
+			expectedUser:    nil,
+			expectedError:   fmt.Errorf("%s: %v", constant.ErrorGettingUser, mongo.ErrNilDocument),
+		},
+	}
 
-		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.Background(), query))
-		assert.EqualError(t, err, expectedError.Error())
-		assert.Nil(t, result)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			collectionMock := setupDatabase()
+			dbRepo := DbRepository{collection: collectionMock}
+			tc.mockFindOneFunc(collectionMock)
+
+			// Act
+			result, err := dbRepo.GetUserById(tc.userID)
+
+			// Assert
+			assert.True(t, collectionMock.AssertCalled(t, "FindOne", context.Background(), bson.M{"_id": bson.M{"$eq": tc.userID}}))
+			assert.Equal(t, tc.expectedUser, result)
+			assert.Equal(t, tc.expectedError, err)
+		})
+	}
 }
 
 func TestDbRepository_CreateUser(t *testing.T) {
-	t.Run("Create user successfully", func(t *testing.T) {
-		// Arrange
-		collectionMock := setupDatabase()
-		dbRepo := DbRepository{collection: collectionMock}
+	user := model.User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@gmail.com",
+		Age:       24,
+	}
 
-		user := model.User{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@gmail.com",
-			Age:       24,
-		}
-
+	mockFindOneFuncReturnEmpty := func(collectionMock *mocks.IMongoCollection) {
 		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
 		collectionMock.On("Find", context.Background(), query).Return(mongo.NewCursorFromDocuments(nil, nil, nil))
-		collectionMock.On("InsertOne", context.Background(), &user).Return(&mongo.InsertOneResult{}, nil, nil)
+	}
 
-		// Act
-		result, err := dbRepo.CreateUser(&user)
+	// Test Create user successfully
+	mockInsertOneFuncReturnSuccess := func(collectionMock *mocks.IMongoCollection) {
+		collectionMock.On("InsertOne", context.Background(), &user).Return(&mongo.InsertOneResult{}, nil)
+	}
 
-		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
-		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.Background(), &user))
-		assert.Nil(t, err)
-		assert.Equal(t, user.FirstName, result.FirstName)
-		assert.Equal(t, user.LastName, result.LastName)
-		assert.Equal(t, user.Email, result.Email)
-		assert.Equal(t, user.Age, result.Age)
-	})
+	// Test Create user failed with error
+	mockInsertOneFuncReturnError := func(collectionMock *mocks.IMongoCollection) {
+		collectionMock.On("InsertOne", context.Background(), &user).Return(&mongo.InsertOneResult{}, mongo.ErrClientDisconnected)
+	}
 
-	t.Run("Create user failed with error", func(t *testing.T) {
-		// Arrange
-		collectionMock := setupDatabase()
-		dbRepo := DbRepository{collection: collectionMock}
+	testCases := []struct {
+		name              string
+		user              *model.User
+		mockFindOneFunc   func(*mocks.IMongoCollection)
+		mockInsertOneFunc func(*mocks.IMongoCollection)
+		expectedUser      *model.User
+		expectedError     error
+	}{
+		{
+			name:              "Create user successfully",
+			user:              &user,
+			mockFindOneFunc:   mockFindOneFuncReturnEmpty,
+			mockInsertOneFunc: mockInsertOneFuncReturnSuccess,
+			expectedUser:      &user,
+			expectedError:     nil,
+		},
+		{
+			name:              "Create user failed with error",
+			user:              &user,
+			mockFindOneFunc:   mockFindOneFuncReturnEmpty,
+			mockInsertOneFunc: mockInsertOneFuncReturnError,
+			expectedUser:      nil,
+			expectedError:     fmt.Errorf("%s: %v", constant.ErrorCreatingUser, mongo.ErrClientDisconnected),
+		},
+	}
 
-		user := model.User{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@gmail.com",
-			Age:       24,
-		}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			collectionMock := setupDatabase()
+			dbRepo := DbRepository{collection: collectionMock}
+			tc.mockFindOneFunc(collectionMock)
+			tc.mockInsertOneFunc(collectionMock)
 
-		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
-		collectionMock.On("Find", context.Background(), query).Return(mongo.NewCursorFromDocuments(nil, nil, nil))
-		collectionMock.On("InsertOne", context.Background(), &user).Return(&mongo.InsertOneResult{}, mongo.ErrClientDisconnected, nil)
-		expectedError := fmt.Errorf("%s: %v", constant.ErrorCreatingUser, mongo.ErrClientDisconnected)
+			// Act
+			result, err := dbRepo.CreateUser(tc.user)
 
-		// Act
-		result, err := dbRepo.CreateUser(&user)
-
-		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
-		assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.Background(), &user))
-		assert.EqualError(t, err, expectedError.Error())
-		assert.Nil(t, result)
-	})
+			// Assert
+			query := bson.M{"firstName": bson.M{"$eq": tc.user.FirstName}, "lastName": bson.M{"$eq": tc.user.LastName}}
+			assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
+			assert.True(t, collectionMock.AssertCalled(t, "InsertOne", context.Background(), tc.user))
+			assert.Equal(t, tc.expectedUser, result)
+			assert.Equal(t, tc.expectedError, err)
+		})
+	}
 }
 
 func TestDbRepository_FindUserByFirstLastName(t *testing.T) {
+	user := model.User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@gmail.com",
+		Age:       24,
+	}
 
-	t.Run("Find user by first and last name successfully", func(t *testing.T) {
-		// Arrange
-		collectionMock := setupDatabase()
-		dbRepo := DbRepository{collection: collectionMock}
-
-		user := model.User{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@gmail.com",
-			Age:       24,
-		}
-
+	// Test Find user by first and last name successfully
+	mockFindFuncReturnUser := func(collectionMock *mocks.IMongoCollection) {
 		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
 		collectionMock.On("Find", context.Background(), query).Return(mongo.NewCursorFromDocuments([]interface{}{user}, nil, nil))
+	}
 
-		// Act
-		result, _ := dbRepo.FindUserByFirstLastName(user.FirstName, user.LastName)
-
-		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
-		assert.Equal(t, user.FirstName, result.FirstName)
-		assert.Equal(t, user.LastName, result.LastName)
-		assert.Equal(t, user.Email, result.Email)
-		assert.Equal(t, user.Age, result.Age)
-	})
-
-	t.Run("Find user by first and last name failed with error", func(t *testing.T) {
-		// Arrange
-		collectionMock := setupDatabase()
-		dbRepo := DbRepository{collection: collectionMock}
-
-		user := model.User{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@gmail.com",
-			Age:       24,
-		}
-
+	// Test Find user by first and last name failed with error
+	mockFindFuncReturnError := func(collectionMock *mocks.IMongoCollection) {
 		query := bson.M{"firstName": bson.M{"$eq": user.FirstName}, "lastName": bson.M{"$eq": user.LastName}}
 		collectionMock.On("Find", context.Background(), query).Return(&mongo.Cursor{}, mongo.ErrClientDisconnected)
-		expectedError := fmt.Errorf("%s: %v", constant.ErrorFindingUser, mongo.ErrClientDisconnected)
+	}
 
-		// Act
-		result, err := dbRepo.FindUserByFirstLastName(user.FirstName, user.LastName)
+	testCases := []struct {
+		name          string
+		firstName     string
+		lastName      string
+		mockFindFunc  func(*mocks.IMongoCollection)
+		expectedUser  model.User
+		expectedError error
+	}{
+		{
+			name:          "Find user by first and last name successfully",
+			firstName:     user.FirstName,
+			lastName:      user.LastName,
+			mockFindFunc:  mockFindFuncReturnUser,
+			expectedUser:  user,
+			expectedError: nil,
+		},
+		{
+			name:          "Find user by first and last name failed with error",
+			firstName:     user.FirstName,
+			lastName:      user.LastName,
+			mockFindFunc:  mockFindFuncReturnError,
+			expectedUser:  model.User{},
+			expectedError: fmt.Errorf("%s: %v", constant.ErrorFindingUser, mongo.ErrClientDisconnected),
+		},
+	}
 
-		// Assert
-		assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
-		assert.EqualError(t, err, expectedError.Error())
-		assert.Equal(t, model.User{}, result)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			collectionMock := setupDatabase()
+			dbRepo := DbRepository{collection: collectionMock}
+			tc.mockFindFunc(collectionMock)
+
+			// Act
+			result, err := dbRepo.FindUserByFirstLastName(tc.firstName, tc.lastName)
+
+			// Assert
+			query := bson.M{"firstName": bson.M{"$eq": tc.firstName}, "lastName": bson.M{"$eq": tc.lastName}}
+			assert.True(t, collectionMock.AssertCalled(t, "Find", context.Background(), query))
+			assert.Equal(t, tc.expectedUser, result)
+			assert.Equal(t, tc.expectedError, err)
+		})
+	}
 }

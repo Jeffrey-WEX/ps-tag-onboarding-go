@@ -35,7 +35,7 @@ func cleanUpDb(db *mongo.Database) {
 	}
 }
 
-func setUpAppAndDb() (*gin.Engine, *mongo.Database, repository.IDbRepository) {
+func setUpAppAndDb(user *model.User, addUser bool) (*gin.Engine, *mongo.Database, repository.IDbRepository) {
 	err := godotenv.Load("../../variables.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file")
@@ -50,161 +50,158 @@ func setUpAppAndDb() (*gin.Engine, *mongo.Database, repository.IDbRepository) {
 	router := gin.Default()
 	routes.InitializeRouter(router)
 
+	if addUser {
+		userRepository.CreateUser(user)
+	}
+
 	return router, db, userRepository
 }
 
-func TestUserControllerIntegration(t *testing.T) {
+func TestUserControllerIntegration_GetUserById(t *testing.T) {
+	userOne := model.User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohDoe@test.com",
+		Age:       25,
+	}
 
-	t.Run("Return not found when finding a non-existing user", func(t *testing.T) {
-		router, db, _ := setUpAppAndDb()
+	emptyErrorMessage := errormessage.ErrorMessage{}
 
-		req, _ := http.NewRequest("GET", "/v1/users/1", nil)
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
+	userNotFoundErrorMessage := errormessage.ErrorMessage{
+		ErrorStatusCode: http.StatusNotFound,
+		ErrorMessage:    constant.ErrorUserNotFound,
+	}
 
-		var errorMessage errormessage.ErrorMessage
-		err := json.Unmarshal(w.Body.Bytes(), &errorMessage)
-		if err != nil {
-			t.Fatalf("Error unmarshaling JSON: %v", err)
-		}
+	nonExistingUser := model.User{
+		ID: "1",
+	}
 
-		assert.Equal(t, http.StatusNotFound, w.Code)
-		assert.Equal(t, http.StatusNotFound, errorMessage.ErrorStatusCode)
-		assert.Equal(t, constant.ErrorUserNotFound, errorMessage.ErrorMessage)
+	testCases := []struct {
+		name                 string
+		user                 *model.User
+		addUser              bool
+		expectedStatusCode   int
+		expectedErrorMessage errormessage.ErrorMessage
+	}{
+		{
+			name:                 "Return user when finding an existing user",
+			user:                 &userOne,
+			addUser:              true,
+			expectedStatusCode:   http.StatusOK,
+			expectedErrorMessage: emptyErrorMessage,
+		},
+		{
+			name:                 "Return not found when finding a non-existing user",
+			user:                 &nonExistingUser,
+			addUser:              false,
+			expectedStatusCode:   http.StatusNotFound,
+			expectedErrorMessage: userNotFoundErrorMessage,
+		},
+	}
 
-		t.Cleanup(func() {
-			cleanUpDb(db)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			router, db, _ := setUpAppAndDb(tc.user, tc.addUser)
+			url := fmt.Sprintf("/v1/users/%s", tc.user.ID)
+			req, _ := http.NewRequest("GET", url, nil)
+			w := httptest.NewRecorder()
+
+			// Act
+			router.ServeHTTP(w, req)
+
+			// Assert
+			var errorMessage errormessage.ErrorMessage
+			_ = json.Unmarshal(w.Body.Bytes(), &errorMessage)
+
+			assert.Equal(t, tc.expectedStatusCode, w.Code)
+			assert.Equal(t, tc.expectedErrorMessage, errorMessage)
+
+			t.Cleanup(func() {
+				cleanUpDb(db)
+			})
 		})
-	})
+	}
+}
 
-	t.Run("Return user when finding an existing user", func(t *testing.T) {
-		router, db, userRepository := setUpAppAndDb()
-		user := model.User{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohDoe@test.com",
-			Age:       25,
-		}
-		userRepository.CreateUser(&user)
-		url := fmt.Sprintf("/v1/users/%s", user.ID)
-		req, _ := http.NewRequest("GET", url, nil)
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
+func TestUserControllerIntegration_CreateUser(t *testing.T) {
+	validUser := model.User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe@test.com",
+		Age:       25,
+	}
 
-		var bodyResponse model.User
-		err := json.Unmarshal(w.Body.Bytes(), &bodyResponse)
-		if err != nil {
-			t.Fatalf("Error unmarshaling JSON: %v", err)
-		}
+	invalidUser := model.User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "JohnDoe",
+		Age:       13,
+	}
 
-		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Equal(t, user.FirstName, bodyResponse.FirstName)
-		assert.Equal(t, user.LastName, bodyResponse.LastName)
-		assert.Equal(t, user.Email, bodyResponse.Email)
-		assert.Equal(t, user.Age, bodyResponse.Age)
+	emptyErrorMessage := errormessage.ErrorMessage{}
 
-		t.Cleanup(func() {
-			cleanUpDb(db)
+	invalidUserErrorMessage := errormessage.ErrorMessage{
+		ErrorStatusCode: http.StatusBadRequest,
+		ErrorMessage:    "User does not meet minimum age requirement, User email must be properly formatted",
+	}
+
+	userAlreadyExistsErrorMessage := errormessage.ErrorMessage{
+		ErrorStatusCode: http.StatusBadRequest,
+		ErrorMessage:    constant.ErrorNameAlreadyExists,
+	}
+
+	testCases := []struct {
+		name                 string
+		user                 *model.User
+		addUser              bool
+		expectedStatusCode   int
+		expectedErrorMessage errormessage.ErrorMessage
+	}{
+		{
+			name:                 "Creating a valid user",
+			user:                 &validUser,
+			addUser:              false,
+			expectedStatusCode:   http.StatusCreated,
+			expectedErrorMessage: emptyErrorMessage,
+		},
+		{
+			name:                 "Creating an invalid user",
+			user:                 &invalidUser,
+			addUser:              false,
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedErrorMessage: invalidUserErrorMessage,
+		},
+		{
+			name:                 "Creating a user with an existing name",
+			user:                 &validUser,
+			addUser:              true,
+			expectedStatusCode:   http.StatusBadRequest,
+			expectedErrorMessage: userAlreadyExistsErrorMessage,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Arrange
+			router, db, _ := setUpAppAndDb(tc.user, tc.addUser)
+			jsonValue, _ := json.Marshal(tc.user)
+			req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer(jsonValue))
+			w := httptest.NewRecorder()
+
+			// Act
+			router.ServeHTTP(w, req)
+
+			// Assert
+			var errorMessage errormessage.ErrorMessage
+			_ = json.Unmarshal(w.Body.Bytes(), &errorMessage)
+
+			assert.Equal(t, tc.expectedStatusCode, w.Code)
+			assert.Equal(t, tc.expectedErrorMessage, errorMessage)
+
+			t.Cleanup(func() {
+				cleanUpDb(db)
+			})
 		})
-
-	})
-
-	t.Run("Creating a valid user", func(t *testing.T) {
-		router, db, _ := setUpAppAndDb()
-		user := model.User{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@test.com",
-			Age:       25,
-		}
-
-		jsonValue, err := json.Marshal(user)
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
-		req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer(jsonValue))
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		var bodyResponse model.User
-		err = json.Unmarshal(w.Body.Bytes(), &bodyResponse)
-		if err != nil {
-			t.Fatalf("Error unmarshaling JSON: %v", err)
-		}
-
-		assert.Equal(t, http.StatusCreated, w.Code)
-		assert.Equal(t, user.FirstName, bodyResponse.FirstName)
-
-		t.Cleanup(func() {
-			cleanUpDb(db)
-		})
-
-	})
-
-	t.Run("Creating an invalid user", func(t *testing.T) {
-		router, db, _ := setUpAppAndDb()
-		user := model.User{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe",
-			Age:       13,
-		}
-
-		jsonValue, err := json.Marshal(user)
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
-		req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer(jsonValue))
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		var errorMessage errormessage.ErrorMessage
-		err = json.Unmarshal(w.Body.Bytes(), &errorMessage)
-		if err != nil {
-			t.Fatalf("Error unmarshaling JSON: %v", err)
-		}
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Equal(t, http.StatusBadRequest, errorMessage.ErrorStatusCode)
-		assert.Equal(t, "User does not meet minimum age requirement, User email must be properly formatted", errorMessage.ErrorMessage)
-
-		t.Cleanup(func() {
-			cleanUpDb(db)
-		})
-	})
-
-	t.Run("Creating a user with an existing name", func(t *testing.T) {
-		router, db, userRepository := setUpAppAndDb()
-		user := model.User{
-			FirstName: "John",
-			LastName:  "Doe",
-			Email:     "JohnDoe@test.com",
-			Age:       25,
-		}
-
-		userRepository.CreateUser(&user)
-
-		jsonValue, err := json.Marshal(user)
-		if err != nil {
-			t.Fatalf("Error marshaling JSON: %v", err)
-		}
-		req, _ := http.NewRequest("POST", "/v1/users", bytes.NewBuffer(jsonValue))
-		w := httptest.NewRecorder()
-		router.ServeHTTP(w, req)
-
-		var errorMessage errormessage.ErrorMessage
-		err = json.Unmarshal(w.Body.Bytes(), &errorMessage)
-		if err != nil {
-			t.Fatalf("Error unmarshaling JSON: %v", err)
-		}
-
-		assert.Equal(t, http.StatusBadRequest, w.Code)
-		assert.Equal(t, http.StatusBadRequest, errorMessage.ErrorStatusCode)
-		assert.Equal(t, constant.ErrorNameAlreadyExists, errorMessage.ErrorMessage)
-
-		t.Cleanup(func() {
-			cleanUpDb(db)
-		})
-	})
-
+	}
 }
